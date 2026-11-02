@@ -13,14 +13,18 @@ permissions:
 jobs:
   frontend:
     runs-on: ubuntu-22.04
+    env:
+      # npm ci and the elevated dependency installer must use the same browser.
+      PUPPETEER_CACHE_DIR: ${{ runner.temp }}/puppeteer
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx puppeteer browsers install chrome --install-deps
+      - name: Install Chrome system dependencies
+        run: sudo env "PATH=$PATH" "PUPPETEER_CACHE_DIR=$PUPPETEER_CACHE_DIR" npx --no-install puppeteer browsers install chrome --install-deps
       - run: npm test
         env:
           PUPPETEER_NO_SANDBOX: '1'
@@ -45,8 +49,8 @@ jobs:
             targets: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
