@@ -2,9 +2,13 @@
 // Shared classic-script scope: see README for load order and file:// support.
   document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => perform(button.dataset.action)));
   pages.addEventListener("click", event => {
+    const tableEdit = event.target.closest(".table-edit");
+    if (tableEdit) { openTableEditor(Number(tableEdit.dataset.tableIndex)); return; }
     const edit = event.target.closest(".diagram-edit");
     if (edit) {
-      openChartEditor(null, Number(edit.closest(".mermaid-figure").dataset.diagramIndex));
+      const index = Number(edit.closest(".mermaid-figure").dataset.diagramIndex);
+      if (edit.dataset.editor === "diagram") openDiagramEditor(null, index);
+      else openChartEditor(null, index);
       return;
     }
     const retry = event.target.closest(".diagram-retry");

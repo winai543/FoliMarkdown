@@ -71,7 +71,7 @@
   function splitTextBlock(block, body) {
     const nodes = [];
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) if (walker.currentNode.length) nodes.push(walker.currentNode);
+    while (walker.nextNode()) if (walker.currentNode.length && !walker.currentNode.parentElement?.closest(".table-editor-caption")) nodes.push(walker.currentNode);
     const length = nodes.reduce((sum, node) => sum + node.length, 0);
     if (length < 2) return null;
     const positionAt = count => {
@@ -116,6 +116,7 @@
     const rest = block.cloneNode(false);
     let firstHolder = first, restHolder = rest;
     if (table) {
+      if (block.caption) { first.append(block.caption.cloneNode(true)); rest.append(block.caption.cloneNode(true)); }
       if (block.tHead) { first.append(block.tHead.cloneNode(true)); rest.append(block.tHead.cloneNode(true)); }
       firstHolder = first.createTBody();
       restHolder = rest.createTBody();
@@ -152,15 +153,22 @@
       }
     });
     const figures = [...source.querySelectorAll(".mermaid-figure")];
-    const editableCharts = new Set(editableChartBlocks().filter(block => block.settings).map(block => block.index));
+    const editableDiagrams = new Map();
+    if (figures.length) for (const block of editableChartBlocks()) {
+      if (block.settings?.type === "diagramTimeline") editableDiagrams.set(block.index, "diagram");
+      else if (block.settings) editableDiagrams.set(block.index, "chart");
+      else if (parseDiagramSource(block.source)) editableDiagrams.set(block.index, "diagram");
+    }
     figures.forEach(figure => {
       populateDiagram(figure);
-      if (editableCharts.has(Number(figure.dataset.diagramIndex))) {
+      if (editableDiagrams.has(Number(figure.dataset.diagramIndex))) {
         const edit = document.createElement("button");
         edit.type = "button";
         edit.className = "diagram-edit library-button";
-        edit.textContent = "Edit chart";
-        edit.setAttribute("aria-label", "Edit chart or timeline settings");
+        const editorType = editableDiagrams.get(Number(figure.dataset.diagramIndex));
+        edit.dataset.editor = editorType;
+        edit.textContent = editorType === "chart" ? "Edit chart" : "Edit diagram";
+        edit.setAttribute("aria-label", editorType === "chart" ? "Edit chart or timeline settings" : "Edit diagram settings");
         figure.append(edit);
       }
     });

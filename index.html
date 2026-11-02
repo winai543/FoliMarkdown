@@ -115,7 +115,7 @@
     <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 .3l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.3l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>Link</span></button>
       <button class="tool big" data-action="image" title="Choose, paste, or drop an image"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m2 18 6-6 4 4 3-3 7 7"/></svg><span>Image</span></button>
-      <button class="tool big" data-action="table"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"/><path d="M2 9h20M9 3v18m6-18v18M2 15h20"/></svg><span>Table</span></button>
+      <button class="tool big" data-action="table" title="Create a table, or edit the table at the cursor"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"/><path d="M2 9h20M9 3v18m6-18v18M2 15h20"/></svg><span>Table</span></button>
       <button class="tool big" data-action="codeblock"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="m9 9-3 3 3 3m6-6 3 3-3 3"/></svg><span>Code block</span></button>
       <button class="tool big" data-action="pagebreak" title="New page (Ctrl/⌘ Enter)"><svg viewBox="0 0 24 24"><path d="M5 2h14v7M5 22h14v-7M3 12h18m-11-3 3 3-3 3"/></svg><span>Page break</span></button>
       <button class="tool big" data-action="rule"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg><span>Horizontal rule</span></button>
@@ -137,14 +137,15 @@
 
   <div class="ribbon" data-ribbon="diagram" hidden>
     <div class="ribbon-group"><div class="group-content">
-      <button class="tool big" data-action="diagramFlow" title="Insert Mermaid flowchart"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="7" height="6" rx="1"/><rect x="15" y="2" width="7" height="6" rx="1"/><rect x="9" y="16" width="7" height="6" rx="1"/><path d="M9 5h6M12 8v8"/></svg><span>Flowchart</span></button>
-      <button class="tool big" data-action="diagramSequence" title="Insert sequence diagram"><svg viewBox="0 0 24 24"><path d="M5 3v18M19 3v18M5 8h14m-3-3 3 3-3 3M19 16H5m3-3-3 3 3 3"/></svg><span>Sequence</span></button>
-      <button class="tool big" data-action="diagramER" title="Insert ER diagram"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="7" height="6" rx="1"/><rect x="15" y="14" width="7" height="6" rx="1"/><path d="M9 7h5v10h1"/></svg><span>ER Diagram</span></button>
+      <button class="tool big" data-action="diagramFlow" title="Create a flowchart with steps and connections"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="7" height="6" rx="1"/><rect x="15" y="2" width="7" height="6" rx="1"/><rect x="9" y="16" width="7" height="6" rx="1"/><path d="M9 5h6M12 8v8"/></svg><span>Flowchart</span></button>
+      <button class="tool big" data-action="diagramSequence" title="Create a sequence diagram with participants and messages"><svg viewBox="0 0 24 24"><path d="M5 3v18M19 3v18M5 8h14m-3-3 3 3-3 3M19 16H5m3-3-3 3 3 3"/></svg><span>Sequence</span></button>
+      <button class="tool big" data-action="diagramER" title="Create an ER diagram with entities and relationships"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="7" height="6" rx="1"/><rect x="15" y="14" width="7" height="6" rx="1"/><path d="M9 7h5v10h1"/></svg><span>ER Diagram</span></button>
       <button class="tool big" data-action="diagramTimeline" title="Configure a timeline"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 7v10m6-10v10m6-10v10"/><circle cx="6" cy="12" r="2" fill="white"/><circle cx="12" cy="12" r="2" fill="white"/><circle cx="18" cy="12" r="2" fill="white"/></svg><span>Timeline</span></button>
+      <button class="tool big" data-action="editDiagram" title="Place the cursor in a diagram block, then click to edit"><svg viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg><span>Edit diagram</span></button>
     </div><div class="group-label">Diagrams</div></div>
     <div class="ribbon-group"><div class="group-content stack">
-      <span class="hint">Timeline opens a form for periods and events</span>
-      <span class="hint">Other diagrams use editable Mermaid templates</span>
+      <span class="hint">Choose a diagram type to open its settings</span>
+      <span class="hint">Build visually, then edit from the preview</span>
     </div><div class="group-label">Diagrams from Markdown</div></div>
   </div>
 
@@ -240,10 +241,10 @@
 </div>
 <dialog id="chartDialog" class="chart-dialog" aria-labelledby="chartDialogTitle">
   <form id="chartForm">
-    <header class="chart-dialog-head"><div><h2 id="chartDialogTitle">Create chart or timeline</h2><p>Set your data. We’ll create the chart for you.</p></div><button type="button" id="chartClose" class="icon-only" aria-label="Close chart settings">×</button></header>
+    <header class="chart-dialog-head"><div><h2 id="chartDialogTitle">Create chart</h2><p>Set your data. We’ll create the chart for you.</p></div><button type="button" id="chartClose" class="icon-only" aria-label="Close chart settings">×</button></header>
     <div class="chart-dialog-content">
       <section class="chart-settings" aria-label="Chart settings">
-        <div class="chart-field"><label for="chartType">Type</label><select id="chartType"><option value="chartBar">Bar chart</option><option value="chartLine">Line chart</option><option value="chartPie">Pie chart</option><option value="diagramTimeline">Timeline</option></select></div>
+        <div class="chart-field"><label for="chartType">Type</label><select id="chartType"><option value="chartBar">Bar chart</option><option value="chartLine">Line chart</option><option value="chartPie">Pie chart</option></select></div>
         <div class="chart-field"><label for="chartTitle">Title</label><input id="chartTitle" required maxlength="160"></div>
         <fieldset id="chartAxes"><legend>Axes</legend><div class="chart-field-pair"><div class="chart-field"><label for="chartXAxis">Horizontal label</label><input id="chartXAxis" placeholder="Optional"></div><div class="chart-field"><label for="chartYAxis">Vertical label</label><input id="chartYAxis" placeholder="Value"></div></div><div class="chart-field-pair"><div class="chart-field"><label for="chartMinimum">Minimum</label><input id="chartMinimum" type="number" step="any" placeholder="Automatic"></div><div class="chart-field"><label for="chartMaximum">Maximum</label><input id="chartMaximum" type="number" step="any" placeholder="Automatic"></div></div><p class="chart-help">Leave both limits empty to fit your data automatically.</p></fieldset>
         <div class="chart-data-head"><h3>Data</h3><button type="button" id="chartAddRow" class="library-button">＋ Add row</button></div>
@@ -254,6 +255,40 @@
       <section class="chart-preview-panel" aria-label="Chart preview"><h3>Preview</h3><div id="chartPreview" class="chart-preview" aria-live="polite"></div><details><summary>Mermaid source</summary><pre><code id="chartCode"></code></pre></details><p class="chart-help">Preview requires an internet connection. Settings are saved as portable Markdown.</p></section>
     </div>
     <footer class="chart-dialog-footer"><button type="button" id="chartCancel" class="library-button">Cancel</button><button type="submit" id="chartSave" class="library-button primary">Insert into document</button></footer>
+  </form>
+</dialog>
+<dialog id="diagramDialog" class="chart-dialog diagram-dialog" aria-labelledby="diagramDialogTitle">
+  <form id="diagramForm">
+    <header class="chart-dialog-head"><div><h2 id="diagramDialogTitle">Create diagram</h2><p>Build your diagram with forms. No Mermaid syntax required.</p></div><button type="button" id="diagramClose" class="icon-only" aria-label="Close diagram settings">×</button></header>
+    <div class="chart-dialog-content">
+      <section class="chart-settings diagram-settings" aria-label="Diagram settings">
+        <div class="chart-field-pair"><div class="chart-field"><label for="diagramType">Type</label><select id="diagramType"><option value="diagramFlow">Flowchart</option><option value="diagramSequence">Sequence</option><option value="diagramER">ER Diagram</option><option value="diagramTimeline">Timeline</option></select></div><div class="diagram-history"><button type="button" class="library-button" id="diagramUndo">Undo</button><button type="button" class="library-button" id="diagramRedo">Redo</button></div></div>
+        <div class="chart-field" id="diagramTimelineTitleField" hidden><label for="diagramTimelineTitle">Title</label><input id="diagramTimelineTitle" maxlength="160"></div>
+        <div class="chart-field" id="diagramDirectionField"><label for="diagramDirection">Direction</label><select id="diagramDirection"><option value="LR">Left → right</option><option value="RL">Right → left</option><option value="TB">Top → bottom</option><option value="BT">Bottom → top</option><option value="TD">Top → down</option></select></div>
+        <label id="diagramNumberingField" class="diagram-numbering" hidden><input id="diagramNumbering" type="checkbox"> Number messages automatically</label>
+        <p class="chart-help" id="diagramFormHelp"></p>
+        <div class="chart-data-head"><h3 id="diagramNodeHeading">Steps</h3><button type="button" id="diagramAddNode" class="library-button">＋ Add step</button></div>
+        <div id="diagramNodes"></div>
+        <p class="chart-help" id="diagramRemoveHelp"></p>
+        <div class="chart-data-head" id="diagramLinksHeading"><h3 id="diagramLinkHeading">Connections</h3><button type="button" id="diagramAddLink" class="library-button">＋ Add connection</button></div>
+        <div id="diagramLinks"></div>
+      </section>
+      <section class="chart-preview-panel diagram-preview-panel" aria-label="Diagram preview"><h3>Preview</h3><p id="diagramPreviewStatus" class="chart-help" role="status" aria-live="polite">Preparing preview…</p><div id="diagramPreview" class="chart-preview"></div><details><summary>Mermaid source</summary><pre><code id="diagramCode"></code></pre></details><p class="chart-help">Preview requires an internet connection. Your diagram is saved as portable Markdown.</p></section>
+    </div>
+    <footer class="chart-dialog-footer"><p id="diagramError" class="chart-error" role="alert"></p><button type="button" id="diagramCancel" class="library-button">Cancel</button><button type="submit" id="diagramSave" class="library-button primary">Insert into document</button></footer>
+    <datalist id="diagramAttributeTypes"><option value="int"><option value="string"><option value="boolean"><option value="float"><option value="date"><option value="datetime"><option value="uuid"><option value="varchar(255)"></datalist>
+  </form>
+</dialog>
+<dialog id="tableDialog" class="chart-dialog table-dialog" aria-labelledby="tableDialogTitle">
+  <form id="tableForm">
+    <header class="chart-dialog-head"><div><h2 id="tableDialogTitle">Create table</h2><p>Edit headers and cells, then insert a standard Markdown table.</p></div><button type="button" id="tableClose" class="icon-only" aria-label="Close table settings">×</button></header>
+    <div class="table-dialog-body">
+      <div class="table-toolbar"><div><button type="button" id="tableAddRow" class="library-button">＋ Add row</button><button type="button" id="tableAddColumn" class="library-button">＋ Add column</button></div><span id="tableSize" class="chart-help"></span><div><button type="button" id="tableUndo" class="library-button">Undo</button><button type="button" id="tableRedo" class="library-button">Redo</button></div></div>
+      <p class="chart-help">Use Tab between fields and Enter for the next row. Press Ctrl/⌘ + Enter to save. Paste tab-separated cells from a spreadsheet to fill multiple cells. Inline Markdown such as **bold** and links is supported. Up to 20 columns and 200 data rows.</p>
+      <section aria-label="Table cells"><div class="table-grid-scroll"><table id="tableGrid" class="table-grid" aria-label="Editable table"></table></div></section>
+      <section class="table-preview-panel" aria-label="Table preview"><h3>Preview</h3><div id="tablePreview" class="document"></div><details><summary>Markdown source</summary><pre><code id="tableCode"></code></pre></details></section>
+    </div>
+    <footer class="chart-dialog-footer"><p id="tableError" class="chart-error" role="alert"></p><button type="button" id="tableCancel" class="library-button">Cancel</button><button type="submit" id="tableSave" class="library-button primary">Insert into document</button></footer>
   </form>
 </dialog>
 <input id="fileInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
@@ -277,6 +312,10 @@
 <script src="src/view.js"></script>
 <script src="src/chart-model.js"></script>
 <script src="src/chart-editor.js"></script>
+<script src="src/diagram-model.js"></script>
+<script src="src/diagram-editor.js"></script>
+<script src="src/table-model.js"></script>
+<script src="src/table-editor.js"></script>
 <script src="src/export-styles.js"></script>
 <script src="src/desktop.js"></script>
 <script src="src/files.js"></script>

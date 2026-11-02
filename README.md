@@ -54,6 +54,7 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
 - A4/Letter paper, portrait/landscape, margins, headers, footers, page numbers, page breaks, and document fonts.
+- Visual editors for Flowchart, Sequence, and ER diagrams: steps/shapes and connections, participants/messages, entities/fields/keys, and relationship cardinality. Includes live preview, form Undo/Redo, reordering, and editing existing diagram blocks.
 - Form-based settings for bar, line, pie charts, and timelines: edit titles, axis labels/limits, and data rows with a live preview. Click **Edit chart** on a preview, or place the cursor inside its Markdown block and choose **Chart → Edit chart**. Advanced Mermaid syntax remains editable in the source.
 - Mermaid charts and diagrams from fenced `mermaid`, `chart`, or `diagram` blocks. Mermaid is loaded on demand from a CDN and needs an internet connection; the rest of the editor works offline.
 - Find and replace (one or all), result highlighting, outline navigation, undo/redo, and keyboard shortcuts.
@@ -61,12 +62,25 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 - Insert PNG, JPEG, GIF, WebP, and AVIF images by selecting a file, pasting, or dragging and dropping (up to 8 MB each, 16 MB per batch). The editor uses short `asset:` references and stores image data separately in the browser. SVG uploads are not supported.
 - Export Markdown (`.md`), standalone HTML, editable DOCX, and PDF; or use the browser's Print / Save as PDF dialog.
 
-## Chart and timeline settings
+## Table editor
+
+Choose **Insert → Table** to open the visual table editor. Edit column headings and cells directly, use **＋ Add row / ＋ Add column**, and choose left, center, or right alignment for each column. Use the arrow buttons to reorder rows or columns and **×** to remove them. **Undo/Redo** reverses changes inside the dialog.
+
+- **Keyboard:** Tab moves between fields; Enter moves to the next row and adds a row when needed. Press **Ctrl/⌘ + Enter** to save, or **Escape** to cancel.
+- **Spreadsheet paste:** paste tab-separated cells into a cell to fill a rectangular region. The editor expands the table as needed, up to 20 columns and 200 data rows. Pasting into a heading starts with the header row.
+- **Formatting:** cells support single-line inline Markdown such as `**bold**`, links, and code. Pipe characters are escaped automatically when generating the table.
+- **Edit existing tables:** click **Edit table** above a table in the document preview, or place the cursor inside a Markdown table and click **Insert → Table**. Tables split across pages reopen as one complete table. Saving replaces only that table; Cancel leaves the document unchanged.
+
+The preview updates while you edit and shows the generated Markdown under **Markdown source**. Tables remain standard GFM Markdown and work with Markdown, HTML, DOCX, PDF, and print exports. Table editing controls are excluded from exports.
+
+![Table dialog with editable headers and cells, column alignment, row and column controls, and live preview](docs/images/table-settings.png)
+
+## Chart settings
 
 Create a chart with the settings dialog—no Mermaid syntax is required. Try it in the **[live demo](https://winai543.github.io/FoliMarkdown/)**.
 
 1. Place the cursor where you want the chart in your document.
-2. Open **Chart** and choose **Bar chart**, **Line chart**, or **Pie chart**. For a timeline, choose **Diagram → Timeline**.
+2. Open **Chart** and choose **Bar chart**, **Line chart**, or **Pie chart**. Timeline has its own form under **Diagram → Timeline**, described below.
 3. Enter a **Title**, then fill in the **Data** rows. Use **＋ Add row** to add an item or **×** beside a row to remove it.
 4. For bar and line charts, set optional horizontal/vertical axis labels. Leave **Minimum** and **Maximum** blank for automatic scaling, or enter both limits. The minimum must be lower than the maximum, and the range must include all values.
 5. Check the live **Preview**, then click **Insert into document**. The app inserts a standard Mermaid block and updates the paginated preview.
@@ -80,10 +94,9 @@ Choose a chart type to suit your data:
 - **Bar chart:** compare categories, such as sales by month or expenses by department. Each row contains a label and a numeric value.
 - **Line chart:** show a trend across ordered labels, such as Jan through Apr. Rows appear in the order you enter them.
 - **Pie chart:** show parts of a whole, such as **Product A: 45**, **Product B: 30**, and **Product C: 25**. Values must be non-negative, and at least one must be greater than zero.
-- **Timeline:** describe milestones with **Period** and **Event** fields, such as **2026: Plan** and **2027: Launch**. These fields accept text rather than numeric values.
 
 <details>
-<summary>View line chart, pie chart, and timeline dialogs</summary>
+<summary>View line chart and pie chart dialogs</summary>
 
 **Line chart**
 
@@ -93,15 +106,43 @@ Choose a chart type to suit your data:
 
 ![Pie chart settings with product labels, values, and a live sales-share preview](docs/images/chart-pie-settings.png)
 
-**Timeline**
-
-![Timeline settings with editable periods and events alongside a project-plan preview](docs/images/timeline-settings.png)
-
 </details>
 
 To update an existing chart, click **Edit chart** below its preview, or place the cursor in its fenced block and choose **Chart → Edit chart**. Adjust the fields and click **Save changes**. Saving updates that block and supports Undo/Redo; **Cancel**, **×**, or **Escape** closes the dialog without changing the document. The **Type** selector also lets you switch chart types before saving.
 
 Expand **Mermaid source** in the dialog to inspect the generated syntax. The chart stays in your Markdown, so it remains portable through Markdown export/import. The preview needs an internet connection to load Mermaid; the form can still save settings when the preview is unavailable. Existing built-in chart examples can be edited with the form, while diagrams with additional Mermaid commands remain editable in the source editor.
+
+## Diagram editors
+
+Open **Diagram → Flowchart / Sequence / ER Diagram / Timeline** to build a diagram through forms. Every editor includes a live preview, generated Mermaid source, **Undo/Redo** for form changes, and **Insert into document** / **Save changes**. Use **↑ / ↓** to reorder elements and **×** to remove them. Removing an element also removes its connections; use **Undo** to restore both. **Cancel** or **Escape** leaves your document unchanged.
+
+- **Flowchart:** choose a direction, add steps, edit labels, and choose process, start/end, decision, or circle shapes. Add connections by selecting **From** and **To**, then choose an arrow style and optional label such as **Yes** or **No**.
+- **Sequence:** add participants or actors, then add messages with a sender, recipient, text, and arrow style. Reorder messages to describe the interaction in order, and optionally enable **Number messages automatically**. Participant order controls their left-to-right positions.
+- **Timeline:** enter a title and add milestones with **Period** and **Event** fields, for example **2026: Plan** and **2027: Launch**. Add, remove, and reorder milestones in the Diagram dialog; use Undo/Redo to reverse form changes.
+- **ER Diagram:** add entities and their fields, including types and **PK**, **FK**, or **UK** keys (including combinations). Select entities at both ends of each relationship, enter a relationship label, and choose cardinality and an identifying or non-identifying line. Entity and field names use letters, numbers, and underscores. Renaming an entity keeps its relationships connected.
+
+Click **Edit diagram** below a rendered diagram, or place the cursor inside its Mermaid block and choose **Diagram → Edit diagram**, to reopen its settings. The form supports the original built-in templates and its generated syntax, including common flowchart shapes and labeled arrows. Advanced Mermaid features such as subgraphs, sequence loops, custom styles, and ER field comments remain editable in Markdown; the form refuses to rewrite unsupported source. Saving updates only the selected block, and the document's Undo/Redo can reverse that change.
+
+<details>
+<summary>View diagram settings dialogs</summary>
+
+**Flowchart**
+
+![Flowchart editor with step shapes, direction, connections, and live preview](docs/images/flowchart-settings.png)
+
+**Sequence**
+
+![Sequence editor with actors, participants, ordered messages, and live preview](docs/images/sequence-settings.png)
+
+**ER Diagram**
+
+![ER editor with entities, fields, keys, and a relationship preview](docs/images/er-settings.png)
+
+**Timeline**
+
+![Timeline in the Diagram dialog with title, periods, events, and live preview](docs/images/timeline-settings.png)
+
+</details>
 
 ## Images referenced by path
 
@@ -160,6 +201,10 @@ src/markdown.js            Markdown parser configuration and preview rendering
 src/diagrams.js            Mermaid loading, rendering, and retries
 src/chart-model.js         Chart/timeline validation and Mermaid round trips
 src/chart-editor.js        Form-based chart settings and live preview
+src/diagram-model.js       Flowchart, sequence, and ER validation and Mermaid parsing
+src/diagram-editor.js      Visual diagram forms, history, and live preview
+src/table-model.js         Table serialization, alignment, and spreadsheet paste
+src/table-editor.js        Table grid editor, history, and live preview
 src/layout.js              Paper settings, pagination, and visual readiness
 src/search.js              Search, highlights, outline, and replace
 src/storage.js             IndexedDB, records, autosave, and draft handling

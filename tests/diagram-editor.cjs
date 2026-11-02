@@ -1,0 +1,153 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const os = require('node:os');
+const { pathToFileURL } = require('node:url');
+(async () => {
+  const { default: puppeteer } = await import('puppeteer');
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'folimarkdown-diagram-ui-'));
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: true, args: process.env.PUPPETEER_NO_SANDBOX ? ['--no-sandbox'] : [], userDataDir: temporary });
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.setViewport({ width: 1440, height: 1000 });
+    await page.goto(pathToFileURL(path.resolve(__dirname, '../index.html')).href);
+    await page.waitForFunction('ready');
+    await page.evaluate(() => {
+      loadMermaid = async () => ({ render: async () => ({ svg: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><text y="40">Diagram preview</text></svg>' }) });
+      editor.value = '# Diagrams\n\n'; update(true); editor.setSelectionRange(editor.value.length, editor.value.length);
+    });
+    const click = selector => page.locator(selector).click();
+    const fill = (selector, value) => page.$eval(selector, (input, value) => { input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); }, value);
+    const save = async () => { await click('#diagramSave'); await page.waitForFunction('!document.querySelector("#diagramDialog").open'); };
+    await click('[data-tab="diagram"]'); await click('[data-action="diagramFlow"]');
+    await page.waitForSelector('#diagramDialog[open]');
+    await fill('#diagramNodes [data-node-id="A"] [data-node-label]', 'เริ่มต้น');
+    await page.select('#diagramDirection', 'TB');
+    await page.select('#diagramNodes [data-node-id="A"] select', 'circle');
+    await click('#diagramAddNode');
+    await fill('#diagramNodes > :last-child [data-node-label]', 'Finish');
+    await click('#diagramAddLink');
+    assert.equal(await page.evaluate('diagramEditorSession.settings.nodes.length'), 5);
+    assert.equal(await page.evaluate('diagramEditorSession.settings.links.length'), 5);
+    await click('#diagramNodes > :last-child .diagram-card-actions button:last-child');
+    assert.equal(await page.evaluate('diagramEditorSession.settings.nodes.length'), 4);
+    assert.equal(await page.evaluate('diagramEditorSession.settings.links.length'), 4);
+    await click('#diagramUndo');
+    assert.equal(await page.evaluate('diagramEditorSession.settings.nodes.length'), 5);
+    assert.equal(await page.evaluate('diagramEditorSession.settings.links.length'), 5);
+    await click('#diagramRedo');
+    assert.equal(await page.evaluate('diagramEditorSession.settings.nodes.length'), 4);
+    await click('#diagramUndo');
+    // Endpoint labels follow node edits without changing the selected connections.
+    assert.ok(await page.$eval('#diagramLinks select', select => select.options[select.selectedIndex].text.includes('เริ่มต้น')));
+    await page.waitForSelector('#diagramPreview svg');
+    await save();
+    const flowText = await page.$eval('#editor', input => input.value);
+    assert.match(flowText, /flowchart TB/); assert.match(flowText, /A\(\("เริ่มต้น"\)\)/);
+    await click('.diagram-edit[data-editor="diagram"]');
+    assert.equal(await page.$eval('#diagramNodes [data-node-id="A"] [data-node-label]', input => input.value), 'เริ่มต้น');
+    await fill('#diagramNodes [data-node-id="A"] [data-node-label]', 'Changed');
+    await save();
+    assert.equal(await page.evaluate('(editor.value.match(/```mermaid/g) || []).length'), 1);
+    await page.evaluate(() => perform('undo'));
+    assert.equal(await page.$eval('#editor', input => input.value), flowText);
+    await page.evaluate(() => perform('redo'));
+    assert.ok(await page.$eval('#editor', input => input.value.includes('Changed')));
+    // Switching form types preserves drafts, and Cancel never changes Markdown.
+    const beforeCancel = await page.$eval('#editor', input => input.value);
+    await click('.diagram-edit[data-editor="diagram"]');
+    await page.select('#diagramType', 'diagramSequence');
+    await fill('#diagramNodes [data-node-id="U"] [data-node-label]', 'Customer');
+    await page.select('#diagramType', 'diagramFlow');
+    assert.equal(await page.$eval('#diagramNodes [data-node-id="A"] [data-node-label]', input => input.value), 'Changed');
+    await page.select('#diagramType', 'diagramSequence');
+    assert.equal(await page.$eval('#diagramNodes [data-node-id="U"] [data-node-label]', input => input.value), 'Customer');
+    await click('#diagramCancel');
+    assert.equal(await page.$eval('#editor', input => input.value), beforeCancel);
+    // A sequence supports participant styles, message order and automatic numbering.
+    await page.evaluate(() => { editor.setSelectionRange(editor.value.length, editor.value.length); perform('diagramSequence'); });
+    await page.waitForSelector('#diagramDialog[open]');
+    await click('#diagramNumbering');
+    await click('#diagramAddNode');
+    await fill('#diagramNodes > :last-child [data-node-label]', 'Database');
+    await click('#diagramAddLink');
+    await fill('#diagramLinks > :last-child input', 'Read data');
+    await click('#diagramLinks > :last-child .diagram-card-actions button:first-child');
+    assert.equal(await page.evaluate('diagramEditorSession.settings.links[1].label'), 'Read data');
+    await save();
+    assert.ok(await page.$eval('#editor', input => input.value.includes('autonumber') && input.value.includes('Database')));
+    // ER entity rename keeps relationships, with editable fields, keys and cardinality.
+    await page.evaluate(() => { editor.setSelectionRange(editor.value.length, editor.value.length); perform('diagramER'); });
+    await page.waitForSelector('#diagramDialog[open]');
+    await fill('#diagramNodes [data-node-id="USER"] [data-node-label]', 'CUSTOMER');
+    assert.ok(await page.$eval('#diagramLinks select', select => select.options[select.selectedIndex].text.includes('CUSTOMER')));
+    await click('#diagramNodes [data-node-id="USER"] > button');
+    await fill('#diagramNodes [data-node-id="USER"] .diagram-attribute-row:last-child .chart-field:nth-child(2) input', 'email');
+    await page.select('#diagramNodes [data-node-id="USER"] .diagram-attribute-row:last-child select', 'UK');
+    await page.select('#diagramLinks > :first-child .chart-field-pair:nth-child(3) .chart-field:first-child select', 'zeroOne');
+    await fill('#diagramNodes [data-node-id="ORDER"] [data-node-label]', 'CUSTOMER');
+    assert.equal(await page.$eval('#diagramSave', button => button.disabled), true);
+    assert.match(await page.$eval('#diagramError', element => element.textContent), /Entity names must be unique/);
+    await fill('#diagramNodes [data-node-id="ORDER"] [data-node-label]', 'ORDER');
+    await save();
+    assert.ok(await page.$eval('#editor', input => input.value.includes('string email UK') && input.value.includes('CUSTOMER |o--o{ ORDER')));
+    assert.ok(await page.evaluate(() => !new DOMParser().parseFromString(exportHtml(), 'text/html').querySelector('.diagram-edit')));
+    await page.evaluate(() => flushDocument());
+    await page.reload(); await page.waitForFunction('ready');
+    assert.ok(await page.$eval('#editor', input => input.value.includes('CUSTOMER')));
+    // Timeline belongs to the Diagram dialog, including existing-block editing.
+    await page.evaluate(() => { editor.setSelectionRange(editor.value.length, editor.value.length); perform('diagramTimeline'); });
+    await page.waitForSelector('#diagramDialog[open]');
+    assert.equal(await page.$eval('#chartDialog', dialog => dialog.open), false);
+    assert.equal(await page.$eval('#diagramType', select => select.value), 'diagramTimeline');
+    await fill('#diagramTimelineTitle', 'Project milestones');
+    await fill('#diagramNodes > :first-child .chart-field:last-child input', 'Research');
+    await click('#diagramAddNode');
+    await fill('#diagramNodes > :last-child .chart-field:first-child input', '2028');
+    await fill('#diagramNodes > :last-child .chart-field:last-child input', 'Expand');
+    await click('#diagramNodes > :last-child .diagram-card-actions button:first-child');
+    await save();
+    assert.ok(await page.$eval('#editor', input => input.value.includes('title Project milestones') && input.value.includes('2028 : Expand')));
+    assert.equal(await page.$eval('.mermaid-figure:last-of-type .diagram-edit', button => button.dataset.editor), 'diagram');
+    const timelineIndex = await page.evaluate('editableChartBlocks().find(block => block.settings?.type === "diagramTimeline").index');
+    await page.evaluate(index => openDiagramEditor(null, index), timelineIndex);
+    assert.equal(await page.$eval('#diagramTimelineTitle', input => input.value), 'Project milestones');
+    await fill('#diagramTimelineTitle', 'Updated milestones');
+    await save();
+    assert.ok(await page.$eval('#editor', input => input.value.includes('title Updated milestones')));
+    // Identical diagrams target the clicked block, not the first matching source.
+    await page.evaluate(() => {
+      loadMermaid = async () => ({ render: async () => ({ svg: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"></svg>' }) });
+      const source = diagramSource(diagramDefaults('diagramFlow'));
+      editor.value = `[reference]: https://example.com\n\n# Diagrams\n\n\`\`\`mermaid\n${source}\n\`\`\`\n\n\`\`\`mermaid\n${source}\n\`\`\`\n`; update(true); openDiagramEditor(null, 1);
+    });
+    await fill('#diagramNodes [data-node-id="A"] [data-node-label]', 'Second only'); await save();
+    assert.ok(await page.$eval('#editor', input => input.value.startsWith('[reference]: https://example.com\n\n# Diagrams')));
+    assert.deepEqual(await page.evaluate('editableChartBlocks().map(block => parseDiagramSource(block.source).nodes[0].label)'), ['Start', 'Second only']);
+    await page.evaluate(() => openDiagramEditor(null, 0));
+    await fill('#diagramNodes [data-node-id="A"] [data-node-label]', 'Do not save');
+    await page.evaluate(() => { editor.value += '\nNew content'; update(true); });
+    await click('#diagramSave');
+    await page.waitForFunction('document.querySelector("#diagramError").textContent.includes("document changed")');
+    await click('#diagramCancel');
+    await page.setViewport({ width: 390, height: 844 });
+    await page.evaluate(() => openDiagramEditor(null, 0));
+    assert.ok(await page.$eval('#diagramDialog', dialog => dialog.getBoundingClientRect().width <= innerWidth));
+    await page.keyboard.press('Escape');
+    assert.equal(await page.$eval('#diagramDialog', dialog => dialog.open), false);
+    // Extra Mermaid commands are preserved by refusing destructive form conversion.
+    await page.evaluate(() => {
+      editor.value = '```mermaid\nflowchart LR\nA-->B\nstyle A fill:red\n```'; update(true); editor.setSelectionRange(15, 15); perform('editDiagram');
+    });
+    assert.equal(await page.$eval('#diagramDialog', dialog => dialog.open), false);
+    assert.ok(await page.$eval('#editor', input => input.value.includes('style A fill:red')));
+    assert.deepEqual(errors, []);
+    console.log('PASS diagram GUI: all types, add/remove/reorder, undo/redo, drafts, fields/keys, cardinality, editing, cancel, reload, export, conflict protection and mobile');
+  } finally {
+    if (browser) await browser.close();
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });

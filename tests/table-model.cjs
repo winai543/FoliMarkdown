@@ -1,0 +1,31 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const marked = require('../vendor/marked.min.js');
+const context = vm.createContext({ structuredClone });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/table-model.js'), 'utf8'), context);
+for (const value of ['ไทย | English', '**Bold**', '[Link](https://example.com)', '`x|y`', 'a\\|b', 'a\\\\|b']) {
+  const model = context.tableDefaults(); model.headers[0] = value; model.rows[0][0] = value;
+  const source = context.tableSource(model);
+  const token = marked.lexer(source)[0];
+  assert.equal(token.type, 'table'); assert.equal(token.header.length, 3); assert.equal(token.rows[0].length, 3);
+  assert.equal(context.tableSource(context.tableFromToken(token)), source);
+}
+const model = context.tableDefaults(); model.align = ['left', 'center', 'right'];
+assert.deepEqual(Array.from(marked.lexer(context.tableSource(model))[0].align), ['left', 'center', 'right']);
+model.rows = [];
+assert.equal(marked.lexer(context.tableSource(model))[0].rows.length, 0);
+const pasted = context.pasteTableCells(context.tableDefaults(), -1, 0, 'Name\tStatus\r\nAlice\tReady\r\nBob\tDraft\r\n');
+assert.deepEqual(Array.from(pasted.headers.slice(0, 2)), ['Name', 'Status']);
+assert.equal(pasted.rows[1][1], 'Draft');
+assert.equal(context.pasteTableCells(context.tableDefaults(), 2, 3, 'Extra\tCells').headers.length, 5);
+assert.throws(() => context.pasteTableCells(context.tableDefaults(), 200, 0, 'Overflow'), /exceeds/);
+assert.throws(() => context.pasteTableCells(context.tableDefaults(), 0, 19, 'One\tTwo'), /exceeds/);
+assert.throws(() => context.pasteTableCells(context.tableDefaults(), -2, 0, 'Invalid'), /destination/);
+model.rows = [['one']];
+assert.throws(() => context.tableSource(model), /same number/);
+model.rows = [['line\nbreak', '', '']];
+assert.throws(() => context.tableSource(model), /one line/);
+assert.equal(context.tableFromToken({ type: 'paragraph' }), null);
+console.log('PASS table models: Markdown round trips, Thai/escaped pipes, formatting, alignment, empty bodies, spreadsheet paste and limits');

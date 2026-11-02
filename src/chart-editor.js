@@ -7,15 +7,16 @@ function editableChartBlocks() {
   let offset = 0, diagramIndex = 0;
   const blocks = [];
   for (const token of markdownParser.lexer(editor.value)) {
+    const start = editor.value.indexOf(token.raw, offset);
     let diagrams = 0;
     markdownParser.walkTokens([token], item => {
       if (item.type === "code" && ["mermaid", "chart", "diagram"].includes((item.lang || "").split(/\s+/)[0].toLowerCase())) diagrams++;
     });
-    if (diagrams && token.type === "code" && /^ {0,3}(?:`{3,}|~{3,})/.test(token.raw)) {
-      blocks.push({ index: diagramIndex, start: offset, end: offset + token.raw.length, source: token.text, settings: parseChartSource(token.text) });
+    if (start >= 0 && diagrams && token.type === "code" && /^ {0,3}(?:`{3,}|~{3,})/.test(token.raw)) {
+      blocks.push({ index: diagramIndex, start, end: start + token.raw.length, source: token.text, settings: parseChartSource(token.text) });
     }
     diagramIndex += diagrams;
-    offset += token.raw.length;
+    if (start >= 0) offset = start + token.raw.length;
   }
   return blocks;
 }
@@ -25,20 +26,19 @@ function chartFormSettings() {
     rows: [...$("#chartRows").children].map(row => [...row.querySelectorAll("input")].map(input => input.value)) };
 }
 function addChartRow(label = "", value = "") {
-  const timeline = $("#chartType").value === "diagramTimeline";
   const row = document.createElement("div");
   row.className = "chart-data-row";
   const labelInput = document.createElement("input");
   labelInput.type = "text";
   labelInput.value = label;
-  labelInput.setAttribute("aria-label", timeline ? "Period" : "Label");
-  labelInput.placeholder = timeline ? "e.g. 2028" : "e.g. May";
+  labelInput.setAttribute("aria-label", "Label");
+  labelInput.placeholder = "e.g. May";
   const valueInput = document.createElement("input");
-  valueInput.type = timeline ? "text" : "number";
-  if (!timeline) valueInput.step = "any";
+  valueInput.type = "number";
+  valueInput.step = "any";
   valueInput.value = value;
-  valueInput.setAttribute("aria-label", timeline ? "Event" : "Value");
-  valueInput.placeholder = timeline ? "e.g. Launch" : "0";
+  valueInput.setAttribute("aria-label", "Value");
+  valueInput.placeholder = "0";
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "chart-remove";
@@ -57,9 +57,8 @@ function fillChartForm(settings) {
   $("#chartMinimum").value = settings.minimum;
   $("#chartMaximum").value = settings.maximum;
   $("#chartAxes").hidden = !["chartBar", "chartLine"].includes(settings.type);
-  const timeline = settings.type === "diagramTimeline";
-  $("#chartLabelHeading").textContent = timeline ? "Period" : "Label";
-  $("#chartValueHeading").textContent = timeline ? "Event" : "Value";
+  $("#chartLabelHeading").textContent = "Label";
+  $("#chartValueHeading").textContent = "Value";
   $("#chartRows").replaceChildren();
   settings.rows.forEach(([label, value]) => addChartRow(label, value));
   scheduleChartPreview();
@@ -96,13 +95,15 @@ function scheduleChartPreview() {
   }, 250);
 }
 function openChartEditor(type, index = null) {
+  if (type === "diagramTimeline") { openDiagramEditor(type, index); return; }
   if (!ready || !$("#libraryOverlay").hidden) return;
   const block = index === null ? editableChartBlocks().find(item => editor.selectionStart >= item.start && editor.selectionStart < item.end) : editableChartBlocks().find(item => item.index === index);
   if (block && !block.settings) { toast("This diagram uses advanced Mermaid syntax. Edit its source in Markdown."); return; }
+  if (block?.settings?.type === "diagramTimeline") { openDiagramEditor(null, block.index); return; }
   const settings = block?.settings || chartDefaults(type || "chartBar");
   chartEditorSession = { block, text: editor.value, documentId: activeId, start: editor.selectionStart, end: editor.selectionEnd,
     focus: document.activeElement, type: settings.type, drafts: new Map() };
-  $("#chartDialogTitle").textContent = block ? "Edit chart or timeline" : "Create chart or timeline";
+  $("#chartDialogTitle").textContent = block ? "Edit chart" : "Create chart";
   $("#chartSave").textContent = block ? "Save changes" : "Insert into document";
   $("#chartDialog").showModal();
   fillChartForm(settings);

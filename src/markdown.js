@@ -39,6 +39,11 @@
     }]
   });
   markdownParser.use({ renderer: {
+    table(token) {
+      const index = markdownContext.tableIndex++;
+      const caption = token._editableTable ? `<caption class="table-editor-caption"><button type="button" class="library-button table-edit" data-table-index="${index}">Edit table</button></caption>` : "";
+      return marked.Renderer.prototype.table.call(this, token).replace("<table>", `<table data-table-index="${index}">${caption}`);
+    },
     heading(token) {
       const id = `heading-${markdownContext.headingIndex++}`;
       const content = this.parser.parseInline(token.tokens);
@@ -82,12 +87,13 @@
     const tokens = markdownParser.lexer(source);
     let offset = 0;
     tokens.forEach(token => {
+      if (token.type === "table") token._editableTable = !!tableFromToken(token);
       if (token.type === "heading") token._line = source.slice(0, offset).split("\n").length - 1;
       offset += token.raw.length;
     });
     const first = tokens.filter(token => token.type !== "space");
     if (first[0]?.type === "heading" && first[1]?.type === "paragraph") first[1]._lead = true;
-    markdownContext = { headings: [], diagramKeys: [], headingIndex: 0, diagramIndex: 0 };
+    markdownContext = { headings: [], diagramKeys: [], headingIndex: 0, diagramIndex: 0, tableIndex: 0 };
     const html = markdownParser.parser(tokens);
     return { html, headings: markdownContext.headings, diagramKeys: markdownContext.diagramKeys };
   }

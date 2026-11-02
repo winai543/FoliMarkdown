@@ -280,3 +280,58 @@
     .diagram-edit { display: block; margin: 8px 0 0 auto; font-family: system-ui, sans-serif; }
     @media (max-width: 720px) { .chart-dialog-content { grid-template-columns: 1fr; } .chart-preview-panel { border-left: 0; border-top: 1px solid var(--line); } .chart-settings, .chart-preview-panel { padding: 16px; } }
     @media print { .chart-dialog, .diagram-edit { display: none !important; } }
+
+    .diagram-dialog { width: min(1240px, calc(100vw - 32px)); }
+    .diagram-dialog .chart-dialog-content { overflow: hidden; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .diagram-settings, .diagram-preview-panel { overflow: auto; min-height: 0; }
+    .diagram-history { display: flex; align-items: end; gap: 8px; margin-bottom: 14px; }
+    .diagram-dialog button:disabled { opacity: .45; cursor: default; }
+    .diagram-numbering { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 0 0 16px; }
+    .diagram-numbering input { width: auto; }
+    .diagram-numbering[hidden], #diagramDirectionField[hidden] { display: none; }
+    .diagram-card { padding: 12px; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 12px; background: #fff; }
+    .diagram-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .diagram-card h4 { margin: 0; font-size: 12px; }
+    .diagram-card-actions { display: flex; gap: 4px; }
+    .diagram-card-actions button { padding: 3px 8px; }
+    .diagram-card .chart-field { margin-bottom: 8px; }
+    .diagram-attribute-row { display: grid; grid-template-columns: 1fr 1fr 1fr 28px; gap: 6px; align-items: end; margin-bottom: 6px; }
+    .diagram-attribute-row > button { padding: 8px 4px; margin-bottom: 8px; }
+    .diagram-preview-panel .chart-preview { overflow: auto; }
+    @media (max-width: 720px) { .diagram-dialog .chart-dialog-content { grid-template-columns: 1fr; overflow: auto; } .diagram-settings, .diagram-preview-panel { overflow: visible; } .diagram-card { padding: 10px; } .diagram-attribute-row { grid-template-columns: 1fr 1fr; } .diagram-attribute-row > button { justify-self: end; } }
+
+    .diagram-dialog .chart-dialog-footer { align-items: center; }
+    .diagram-dialog .chart-dialog-footer .chart-error { margin: 0 auto 0 0; max-width: 70%; }
+    @media (max-width: 720px) { .diagram-dialog .chart-dialog-footer { flex-wrap: wrap; } .diagram-dialog .chart-dialog-footer .chart-error:not(:empty) { width: 100%; max-width: none; } }
+
+    #diagramTimelineTitleField[hidden], #diagramLinksHeading[hidden], #diagramLinks[hidden] { display: none; }
+
+    .table-dialog { width: min(1180px, calc(100vw - 32px)); }
+    .table-dialog-body { min-height: 0; overflow: auto; padding: 20px 24px; }
+    .table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .table-toolbar > div { display: flex; gap: 6px; }
+    .table-dialog button:disabled { opacity: .45; cursor: default; }
+    .table-grid-scroll { overflow: auto; max-height: 380px; border: 1px solid var(--line); border-radius: 6px; }
+    .table-grid { border-collapse: separate; border-spacing: 0; width: 100%; text-align: left; }
+    .table-grid th, .table-grid td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px; min-width: 200px; }
+    .table-grid thead th { position: sticky; top: 0; z-index: 2; background: #edf5f1; }
+    .table-grid tbody th { background: #f7f9f8; }
+    .table-grid th:first-child { min-width: 112px; width: 112px; }
+    .table-grid input { min-width: 170px; }
+    .table-grid select { margin-top: 6px; font-size: 11px; }
+    .table-column-actions { display: flex; align-items: center; gap: 3px; margin-bottom: 8px; }
+    .table-column-actions span { flex: 1; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .table-column-actions button, .table-row-actions button { padding: 2px 6px; }
+    .table-row-actions { display: inline-flex; gap: 3px; margin-left: 6px; }
+    .table-grid tbody th > span { font-size: 11px; }
+    .table-preview-panel { margin-top: 22px; }
+    .table-preview-panel h3 { margin-bottom: 8px; }
+    #tablePreview { overflow: auto; }
+    #tablePreview img { max-height: 160px; }
+    .table-preview-panel summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+    .table-preview-panel pre { overflow: auto; font-size: 12px; line-height: 1.6; }
+    .table-dialog .chart-dialog-footer { align-items: center; }
+    .table-dialog .chart-dialog-footer .chart-error { margin: 0 auto 0 0; max-width: 70%; }
+    .document .table-editor-caption { caption-side: top; text-align: right; padding: 0 0 6px; }
+    @media (max-width: 720px) { .table-dialog-body { padding: 14px; } .table-dialog .chart-dialog-footer { flex-wrap: wrap; } .table-dialog .chart-dialog-footer .chart-error:not(:empty) { width: 100%; max-width: none; } }
+    @media print { .table-editor-caption { display: none !important; } }
