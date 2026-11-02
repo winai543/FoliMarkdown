@@ -9,7 +9,13 @@
         import(mermaidLoadAttempt ? `${MERMAID_URL}?retry=${mermaidLoadAttempt}` : MERMAID_URL),
         new Promise((_, reject) => setTimeout(() => reject(new Error("Mermaid loading timed out")), 6000))
       ]).then(module => {
-        module.default.initialize({ startOnLoad: false, securityLevel: "strict", theme: "neutral", flowchart: { htmlLabels: false } });
+        module.default.initialize({
+          startOnLoad: false, securityLevel: "strict", theme: "neutral",
+          themeVariables: {
+            xyChart: { plotColorPalette: "#14685f, #2563eb, #b45309, #7c3aed, #be123c" }
+          },
+          flowchart: { htmlLabels: false }
+        });
         return module.default;
       }).catch(error => {
         mermaidModulePromise = null;
