@@ -1,6 +1,6 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
-  function perform(action) {
+  async function perform(action) {
     switch (action) {
       case "bold": replaceSelection("**", "**"); break;
       case "italic": replaceSelection("*", "*"); break;
@@ -36,18 +36,18 @@
       case "open": $("#fileInput").click(); break;
       case "download":
         try {
-          download(`${cleanName()}.md`, markdownFile(), "text/markdown;charset=utf-8");
-          toast("Downloaded Markdown with images");
+          if (await download(`${cleanName()}.md`, markdownFile(), "text/markdown;charset=utf-8"))
+            toast("Saved Markdown with images");
         } catch (error) {
           console.error("Markdown export failed:", error);
-          toast("Export failed: some stored images are missing");
+          toast("Could not save Markdown. Check stored images and the destination.");
         }
         break;
       case "docx":
         toast("Preparing DOCX...");
         prepareVisuals(() => {
-          exportDocx().then(({ blob, warnings }) => {
-            download(`${cleanName()}.docx`, blob, blob.type);
+          exportDocx().then(async ({ blob, warnings }) => {
+            if (!await download(`${cleanName()}.docx`, blob, blob.type)) return;
             toast(warnings ? `Downloaded DOCX (${warnings} images/diagrams could not be converted; text was used instead)` : "Downloaded DOCX");
           }).catch(error => {
             console.error("DOCX export failed:", error);
@@ -56,7 +56,11 @@
         });
         break;
       case "print":
-        prepareVisuals(() => window.print());
+        if (isDesktop) {
+          // A direct PDF export works across WKWebView, WebKitGTK and WebView2.
+          // Open the saved PDF in the system viewer to print it.
+          if (!pdfBusy) prepareVisuals(() => exportPdf());
+        } else prepareVisuals(() => window.print());
         break;
       case "pdf":
         if (!pdfBusy) {
@@ -65,10 +69,10 @@
         }
         break;
       case "export": {
-        prepareVisuals(() => {
+        prepareVisuals(async () => {
           try {
-            download(`${cleanName()}.html`, exportHtml(), "text/html;charset=utf-8");
-            toast("Downloaded HTML");
+            if (await download(`${cleanName()}.html`, exportHtml(), "text/html;charset=utf-8"))
+              toast("Saved HTML");
           } catch (error) {
             console.error("HTML export failed:", error);
             toast("Could not export HTML. Check whether the stylesheet loaded.");

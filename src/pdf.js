@@ -43,8 +43,8 @@
           await new Promise(resolve => setTimeout(resolve, 0));
         }
       } finally { staging.remove(); }
-      download(`${cleanName()}.pdf`, new Blob([pdf.output("arraybuffer")], { type: "application/pdf" }), "application/pdf");
-      toast(`Downloaded PDF (${pageElements.length} pages)`);
+      const saved = await download(`${cleanName()}.pdf`, new Blob([pdf.output("arraybuffer")], { type: "application/pdf" }), "application/pdf");
+      if (saved) toast(`Saved PDF (${pageElements.length} pages)`);
     } catch (error) {
       console.error("PDF export failed:", error);
       toast("PDF export failed. Use Print / PDF and choose Save as PDF instead.");

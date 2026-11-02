@@ -4,6 +4,48 @@ A Markdown document editor with paginated previews, document storage, and export
 
 ![FoliMarkdown desktop interface showing the formatting toolbar, document outline, Markdown editor, and live paginated preview](docs/images/folimarkdown-ui.png)
 
+## Desktop app (Tauri 2)
+
+FoliMarkdown also includes a native desktop wrapper for **macOS, Linux, and Windows**. It uses the same editor, with system save dialogs for Markdown, HTML, DOCX, and PDF, external links opened in your default browser, and document saving before the window closes. Documents are stored in the desktop app's WebView profile, separately from documents in your browser; use Markdown export/import to transfer them.
+
+Install Node.js 22.12+ and Rust 1.91+ (current stable recommended), plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/):
+
+- **macOS:** Xcode Command Line Tools. Local builds use your Mac's architecture. For a universal Apple Silicon/Intel build, install both Rust targets: `rustup target add aarch64-apple-darwin x86_64-apple-darwin`.
+- **Windows:** Visual Studio Build Tools with **Desktop development with C++**, the Windows SDK, and Microsoft Edge WebView2.
+- **Linux (Ubuntu/Debian):** install the WebKitGTK and build dependencies below. Build installers on the platform they target.
+
+```sh
+sudo apt-get update
+sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils libfuse2
+```
+
+```sh
+npm ci
+npm run desktop:dev
+```
+
+To make installers:
+
+```sh
+npm run desktop:build
+# Universal macOS build (after adding both Rust targets):
+npm run desktop:build -- --target universal-apple-darwin --bundles app,dmg
+```
+
+The desktop build copies only `index.html`, `src/`, `styles/`, and `vendor/` to `dist/`. It does not change the browser version: you can still open the root `index.html` without installing dependencies. In development, edit the root source files and restart `npm run desktop:dev` to refresh the copied assets. Build output is under `src-tauri/target/release/bundle/` (or `src-tauri/target/universal-apple-darwin/release/bundle/` for universal macOS).
+
+The **Desktop builds** GitHub Actions workflow runs frontend tests, then builds a universal macOS `.dmg`, Linux x64 `.deb`/`.AppImage`, and Windows x64 `.exe`/`.msi`. Download these from each successful workflow run's **Artifacts** section. The workflow also runs manually through **Actions → Desktop builds → Run workflow**. Builds are unsigned; public signed/notarized distribution requires your platform signing credentials. The workflow builds installers and does not publish a release automatically.
+
+In the desktop app, **Print / PDF** and `Ctrl/⌘ + P` save a PDF through the system save dialog; open that PDF in your system viewer to print it. This uses the same rasterized export as **Export PDF**. Browser Print / PDF still uses the browser's print dialog. Mermaid and optional Google Fonts still need an internet connection.
+
+Desktop checks:
+
+```sh
+npm test
+npm run build:web
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+```
+
 ## Features
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
@@ -62,6 +104,7 @@ src/assets.js              Image storage, insertion, and portable Markdown conve
 src/editor.js              Editing commands, selection, and undo history
 src/view.js                View switching, navigation, and notifications
 src/export-styles.js       Generated CSS fallback for standalone file:// exports
+src/desktop.js             Native save, confirmation, rename, links, and save-on-close
 src/files.js               Markdown import/export and standalone HTML export
 src/library.js             Document library, Trash, and startup recovery
 src/pdf.js                 Direct PDF export
@@ -70,13 +113,16 @@ src/actions.js             Toolbar action dispatch
 src/events.js              DOM, keyboard, paste, and drag/drop listeners
 src/boot.js                Starts the library after all feature scripts load
 vendor/                    Third-party libraries, bundled for offline use
+src-tauri/                 Rust desktop wrapper, capabilities, config, and app icons
+scripts/build-web.cjs      Copies public assets into dist/ for Tauri
+.github/workflows/desktop.yml  macOS, Linux, and Windows build jobs
 ```
 
 The app deliberately uses **ordered classic scripts**, not ES modules: browsers may block module imports from `file://`. Each `src/` file uses the same global lexical scope and depends on the preceding scripts. Add new files before `src/events.js` and `src/boot.js` in `index.html` as appropriate; avoid redeclaring top-level `const` or `let` names. Keep third-party code in `vendor/` and do not edit it for app features. No package install, network access, or build tool is needed to run the application.
 
 After editing `styles/app.css`, run `node scripts/sync-export-css.cjs` and commit the generated `src/export-styles.js`. This fallback embeds the same CSS in downloaded HTML when browsers block stylesheet access on `file://`. Check that it is current with `node scripts/sync-export-css.cjs --check`.
 
-For browser smoke tests, install Puppeteer in your development environment and run `node tests/smoke.cjs`. The tests use a temporary browser profile and local HTTP server, exercise both `file://` and HTTP, and check editing, persistence, portable images, standalone HTML screen/print styles, Markdown import, all four download formats, library operations, and mobile preview. Test documents and downloads are removed afterward.
+For browser smoke tests, run `npm ci` and `npm test` (or `node tests/smoke.cjs` for the browser suite alone). The tests use a temporary browser profile and local HTTP server, exercise both `file://` and HTTP, and check editing, persistence, portable images, standalone HTML screen/print styles, Markdown import, all four download formats, library operations, and mobile preview. Test documents and downloads are removed afterward.
 
 ## Storage and privacy
 

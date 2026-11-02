@@ -1,7 +1,12 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
-  function download(filename, content, mime) {
+  async function download(filename, content, mime) {
     const blob = new Blob([content], { type: mime });
+    if (isDesktop) {
+      return window.__TAURI__.core.invoke("save_export", {
+        filename, data: Array.from(new Uint8Array(await blob.arrayBuffer()))
+      });
+    }
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -10,6 +15,7 @@
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return true;
   }
   function cleanName() { return (docName.value.trim() || "Document").replace(/[\\/:*?"<>|]/g, "-"); }
   function markdownFile() {

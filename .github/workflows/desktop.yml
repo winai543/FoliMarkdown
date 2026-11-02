@@ -1,0 +1,80 @@
+name: Desktop builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx puppeteer browsers install chrome --install-deps
+      - run: npm test
+        env:
+          PUPPETEER_NO_SANDBOX: '1'
+
+  desktop:
+    needs: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            name: macos-universal
+            args: --target universal-apple-darwin --bundles app,dmg
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            name: linux-x64
+            args: --bundles deb,appimage
+            targets: x86_64-unknown-linux-gnu
+          - platform: windows-latest
+            name: windows-x64
+            args: --bundles nsis,msi
+            targets: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.targets }}
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils libfuse2
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - run: npm run build:web
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build desktop installers
+        run: npm run desktop:build -- ${{ matrix.args }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoliMarkdown-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            src-tauri/target/**/bundle/dmg/*.dmg
+            src-tauri/target/**/bundle/deb/*.deb
+            src-tauri/target/**/bundle/appimage/*.AppImage
+            src-tauri/target/**/bundle/nsis/*.exe
+            src-tauri/target/**/bundle/msi/*.msi

@@ -107,7 +107,7 @@
         closeLibrary();
         toast(action === "restore" ? "Document restored" : "Document opened");
       } else if (action === "rename") {
-        const name = prompt("New document name", item.name)?.trim();
+        const name = (await promptDocumentName(item.name))?.trim();
         if (!name || name === item.name) return;
         const renamed = { ...item, name: name.slice(0, 100), updatedAt: Date.now() };
         await storeRecord(renamed);
@@ -119,7 +119,7 @@
         renderLibrary();
         toast("Copy created");
       } else if (action === "delete" || action === "purge") {
-        if (!confirm(action === "purge" ? `Permanently delete "${item.name}"? This cannot be undone.` : `Move "${item.name}" to Trash?`)) return;
+        if (!await confirmDocumentAction(action === "purge" ? `Permanently delete "${item.name}"? This cannot be undone.` : `Move "${item.name}" to Trash?`)) return;
         if (action === "purge") await removeRecord(id);
         else await storeRecord({ ...item, deletedAt: Date.now() });
         if (id === activeId) {

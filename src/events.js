@@ -112,6 +112,7 @@
     }
   });
   document.addEventListener("keydown", event => {
+    if (document.querySelector(".desktop-prompt[open]")) return;
     if (event.key === "Escape" && !$("#libraryOverlay").hidden) { event.preventDefault(); closeLibrary(); return; }
     if (!$("#libraryOverlay").hidden) {
       if (event.key === "Tab") {

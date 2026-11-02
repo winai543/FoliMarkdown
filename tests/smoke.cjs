@@ -5,10 +5,11 @@ const path = require('node:path');
 const os = require('node:os');
 const http = require('node:http');
 const { pathToFileURL } = require('node:url');
-const puppeteer = require('puppeteer');
+
 const root = path.resolve(__dirname, '..');
 
 (async () => {
+  const { default: puppeteer } = await import('puppeteer');
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'folimarkdown-test-'));
   const server = http.createServer(async (request, response) => {
     try {
@@ -22,7 +23,7 @@ const root = path.resolve(__dirname, '..');
   let browser;
   try {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    browser = await puppeteer.launch({ headless: true, userDataDir: path.join(temporary, 'profile') });
+    browser = await puppeteer.launch({ headless: true, args: process.env.PUPPETEER_NO_SANDBOX ? ['--no-sandbox'] : [], userDataDir: path.join(temporary, 'profile') });
     const errors = [];
     const page = await browser.newPage();
     page.on('pageerror', error => errors.push(error.message));
@@ -123,6 +124,48 @@ const root = path.resolve(__dirname, '..');
     await page.setViewport({ width: 390, height: 844 });
     await page.evaluate(() => setView('preview'));
     assert.ok(await page.$eval('.preview-side', element => element.getBoundingClientRect().width > 0));
+    const desktopPage = await browser.newPage();
+    desktopPage.on('pageerror', error => errors.push(error.message));
+    await desktopPage.evaluateOnNewDocument(() => {
+      window.nativeCalls = [];
+      window.__TAURI__ = {
+        core: { invoke: async (command, args) => {
+          window.nativeCalls.push({ command, args });
+          return true;
+        } },
+        window: { getCurrentWindow: () => ({
+          onCloseRequested: async callback => { window.nativeClose = callback; return () => {}; },
+          destroy: async () => { window.nativeDestroyed = true; }
+        }) }
+      };
+    });
+    await desktopPage.goto(`http://127.0.0.1:${server.address().port}/index.html`);
+    await desktopPage.waitForFunction('ready && window.nativeClose');
+    await desktopPage.evaluate(() => perform('download'));
+    const nativeSaved = await desktopPage.evaluate('window.nativeCalls.find(item => item.command === "save_export")');
+    assert.match(Buffer.from(nativeSaved.args.data).toString(), /page-settings:layout/);
+    await desktopPage.evaluate(() => openLibrary());
+    await desktopPage.click('[data-library-action="rename"]');
+    await desktopPage.waitForSelector('.desktop-prompt[open]');
+    await desktopPage.$eval('#desktopPromptName', input => { input.value = 'Desktop renamed'; });
+    await desktopPage.click('.desktop-prompt button[value="save"]');
+    await desktopPage.waitForFunction('documents.some(item => item.name === "Desktop renamed")');
+    const renamedId = await desktopPage.evaluate('documents.find(item => item.name === "Desktop renamed").id');
+    await desktopPage.evaluate(id => libraryAction('delete', id), renamedId);
+    assert.ok(await desktopPage.evaluate('window.nativeCalls.some(item => item.command === "confirm_action")'));
+    await desktopPage.evaluate(() => closeLibrary());
+    await desktopPage.evaluate(() => {
+      editor.value += '\n\n[External](https://example.com)';
+      update(true);
+    });
+    await desktopPage.locator('.document a[href="https://example.com"]').click();
+    await desktopPage.waitForFunction('window.nativeCalls.some(item => item.command === "open_external")');
+    await desktopPage.evaluate(async () => {
+      await window.nativeClose({ preventDefault: () => { window.nativeClosePrevented = true; } });
+    });
+    assert.ok(await desktopPage.evaluate('window.nativeDestroyed && window.nativeClosePrevented'));
+    await desktopPage.close();
+    console.log('PASS desktop integration (mock IPC): save, rename, native confirmation, external link and save-on-close');
     assert.deepEqual(errors, []);
     console.log('PASS downloads: Markdown, HTML, DOCX, PDF; import, duplicate, trash, restore and mobile preview');
   } finally {
