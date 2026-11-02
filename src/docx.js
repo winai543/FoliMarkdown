@@ -115,6 +115,9 @@
       box.innerHTML = html;
       return box.value;
     };
+    let contentWidth = usableWidth;
+    let imageHeightLimit = pageHeight - 2700;
+    let absoluteSerial = 0;
     const imageRun = async (href, alt) => {
       try {
         href = plainText(safeUrl(href, true));
@@ -151,7 +154,7 @@
         const path = `word/media/image${nextImage++}.${extension}`;
         files.set(path, new Uint8Array(await blob.arrayBuffer()));
         const rid = rel("image", path.slice(5));
-        const scale = Math.min(1, (usableWidth * 635) / (width * 9525), ((pageHeight - 2700) * 635) / (height * 9525));
+        const scale = Math.min(1, (contentWidth * 635) / (width * 9525), (imageHeightLimit * 635) / (height * 9525));
         const cx = Math.round(width * 9525 * scale), cy = Math.round(height * 9525 * scale);
         const id = nextDrawing++;
         return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="Image ${id}" descr="${docxXml(alt || "Image")}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="Image ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
@@ -204,65 +207,100 @@
       }
       return result;
     };
-    const blocks = async (tokens, depth = 0, quoted = false) => {
-      let output = "";
-      for (const token of tokens || []) {
-        if (token.type === "space") continue;
-        if (token.type === "heading") output += paragraph(await inlineRuns(token.tokens), { style: `Heading${token.depth}`, indent: quoted ? 360 : 0, quote: quoted });
-        else if (token.type === "paragraph" || token.type === "text") output += paragraph(await inlineRuns(token.tokens || [{ type: "text", text: token.text }]), { indent: depth ? 720 + depth * 360 : quoted ? 360 : 0, quote: quoted });
-        else if (token.type === "blockquote") output += await blocks(token.tokens, depth, true);
-        else if (token.type === "pagebreak") output += paragraph('<w:r><w:br w:type="page"/></w:r>');
-        else if (token.type === "hr") output += paragraph("", { rule: true });
-        else if (token.type === "html") output += paragraph(textRun(token.text));
-        else if (token.type === "code") {
-          const language = (token.lang || "").split(/\s+/)[0].toLowerCase();
-          if (["mermaid", "chart", "diagram"].includes(language)) {
-            const key = `${diagramIndex++}\u0000${token.text}`;
-            const diagram = diagramCache.get(key);
-            if (diagram?.svg) {
-              try { output += paragraph(await svgImage(diagram.svg, "Diagram")); continue; }
-              catch (error) { console.warn("Cannot rasterize diagram:", error); }
-            }
-            warnings++;
+    const blocks = async (tokens, depth = 0, quoted = false, availableWidth = contentWidth) => {
+      const previousWidth = contentWidth;
+      contentWidth = availableWidth;
+      try {
+        let output = "";
+        for (const token of tokens || []) {
+          if (token.type === "space") continue;
+          if (token.type === "absoluteBlock") {
+            // Word text boxes group rich content in a floating, auto-sized frame.
+            const previousLimit = imageHeightLimit;
+            imageHeightLimit = 1800;
+            let content;
+            const imageOnly = token.tokens.filter(item => item.type !== 'space').length === 1
+              && token.tokens.find(item => item.type !== 'space')?.tokens?.filter(item => item.type !== 'text' || item.text.trim()).every(item => item.type === 'image');
+            const width = Math.min(contentWidth, imageOnly ? 1440 : 3600);
+            try { content = await blocks(token.tokens, depth, quoted, width); }
+            finally { imageHeightLimit = previousLimit; }
+            const position = token.position;
+            const horizontal = position.right !== undefined ? 'mso-position-horizontal:right;' : `left:${(position.left || 0) * .75}pt;`;
+            const vertical = position.bottom !== undefined ? 'mso-position-vertical:bottom;' : `top:${(position.top || 0) * .75}pt;`;
+            output += `<w:p><w:r><w:pict><v:rect id="absolute${++absoluteSerial}" style="position:absolute;width:${width / 20}pt;height:1pt;${horizontal}${vertical}mso-position-horizontal-relative:text;mso-position-vertical-relative:text" stroked="f" filled="f"><v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:t"><w:txbxContent>${content}${paragraph()}</w:txbxContent></v:textbox><w10:wrap type="none"/></v:rect></w:pict></w:r></w:p>`;
           }
-          for (const line of (token.text || "").split("\n")) output += paragraph(textRun(line, { code: true }), { style: "Code", indent: depth ? 720 + depth * 360 : 0 });
-        } else if (token.type === "list") {
-          const numId = nextNumber++;
-          numbering.push({ id: numId, ordered: token.ordered, level: Math.min(depth, 8), start: Number(token.start) || 1 });
-          for (const item of token.items) {
-            let first = true;
-            const children = item.tokens.filter(child => child.type !== "checkbox");
-            if (!children.length) children.push({ type: "text", text: item.text });
-            for (const child of children) {
-              if (child.type === "list") { output += await blocks([child], depth + 1, quoted); continue; }
-              const prefix = item.task && first ? textRun(item.checked ? "☑ " : "☐ ") : "";
-              const content = await inlineRuns(child.tokens || [{ type: "text", text: child.text || "" }]);
-              output += paragraph(prefix + content, {
-                numId: first && !item.task ? numId : 0,
-                depth, indent: item.task || !first ? 720 + depth * 360 : 0, quote: quoted
-              });
-              first = false;
+          else if (token.type === "columnRow") {
+            const totalRatio = token.columns.reduce((sum, column) => sum + column.ratio, 0);
+            let allocated = 0;
+            const widths = token.columns.map((column, index) => {
+              const width = index === token.columns.length - 1 ? contentWidth - allocated : Math.floor(contentWidth * column.ratio / totalRatio);
+              allocated += width;
+              return width;
+            });
+            const cells = [];
+            for (const [index, column] of token.columns.entries()) {
+              const width = widths[index];
+              const content = await blocks(column.tokens, depth, quoted, Math.max(1, width - 240));
+              cells.push(`<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="top"/></w:tcPr>${content}${paragraph()}</w:tc>`);
             }
-            if (first) output += paragraph(item.task ? textRun(item.checked ? "☑ " : "☐ ") : "", { numId: item.task ? 0 : numId, depth, indent: item.task ? 720 + depth * 360 : 0 });
+            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="nil"/>`).join("")}</w:tblBorders><w:tblCellMar><w:left w:w="120" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(width => `<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid><w:tr>${cells.join('')}</w:tr></w:tbl>${paragraph()}`;
           }
-        } else if (token.type === "table") {
-          const count = token.header.length;
-          const width = Math.floor(usableWidth / count);
-          const row = async (cells, header) => `<w:tr>${(await Promise.all(cells.map(async (cell, i) => {
-            const align = token.align[i] === "right" ? "right" : token.align[i] === "center" ? "center" : "left";
-            return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${header ? '<w:shd w:fill="EAF1FA"/>' : ""}</w:tcPr>${paragraph(await inlineRuns(cell.tokens, header ? { bold: true } : {}), { align })}</w:tc>`;
-          }))).join("")}</w:tr>`;
-          const rows = [await row(token.header, true)];
-          for (const cells of token.rows) rows.push(await row(cells, false));
-          output += `<w:tbl><w:tblPr><w:tblW w:w="${usableWidth}" w:type="dxa"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="DAE1E9"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${Array.from({ length: count }, () => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
+          else if (token.type === "heading") output += paragraph(await inlineRuns(token.tokens), { style: `Heading${token.depth}`, indent: quoted ? 360 : 0, quote: quoted });
+          else if (token.type === "paragraph" || token.type === "text") output += paragraph(await inlineRuns(token.tokens || [{ type: "text", text: token.text }]), { indent: depth ? 720 + depth * 360 : quoted ? 360 : 0, quote: quoted });
+          else if (token.type === "blockquote") output += await blocks(token.tokens, depth, true);
+          else if (token.type === "pagebreak") output += paragraph('<w:r><w:br w:type="page"/></w:r>');
+          else if (token.type === "hr") output += paragraph("", { rule: true });
+          else if (token.type === "html") output += paragraph(textRun(token.text));
+          else if (token.type === "code") {
+            const language = (token.lang || "").split(/\s+/)[0].toLowerCase();
+            if (["mermaid", "chart", "diagram"].includes(language)) {
+              const key = `${diagramIndex++}\u0000${token.text}`;
+              const diagram = diagramCache.get(key);
+              if (diagram?.svg) {
+                try { output += paragraph(await svgImage(diagram.svg, "Diagram")); continue; }
+                catch (error) { console.warn("Cannot rasterize diagram:", error); }
+              }
+              warnings++;
+            }
+            for (const line of (token.text || "").split("\n")) output += paragraph(textRun(line, { code: true }), { style: "Code", indent: depth ? 720 + depth * 360 : 0 });
+          } else if (token.type === "list") {
+            const numId = nextNumber++;
+            numbering.push({ id: numId, ordered: token.ordered, level: Math.min(depth, 8), start: Number(token.start) || 1 });
+            for (const item of token.items) {
+              let first = true;
+              const children = item.tokens.filter(child => child.type !== "checkbox");
+              if (!children.length) children.push({ type: "text", text: item.text });
+              for (const child of children) {
+                if (child.type === "list") { output += await blocks([child], depth + 1, quoted); continue; }
+                const prefix = item.task && first ? textRun(item.checked ? "☑ " : "☐ ") : "";
+                const content = await inlineRuns(child.tokens || [{ type: "text", text: child.text || "" }]);
+                output += paragraph(prefix + content, {
+                  numId: first && !item.task ? numId : 0,
+                  depth, indent: item.task || !first ? 720 + depth * 360 : 0, quote: quoted
+                });
+                first = false;
+              }
+              if (first) output += paragraph(item.task ? textRun(item.checked ? "☑ " : "☐ ") : "", { numId: item.task ? 0 : numId, depth, indent: item.task ? 720 + depth * 360 : 0 });
+            }
+          } else if (token.type === "table") {
+            const count = token.header.length;
+            const width = Math.floor(contentWidth / count);
+            const row = async (cells, header) => `<w:tr>${(await Promise.all(cells.map(async (cell, i) => {
+              const align = token.align[i] === "right" ? "right" : token.align[i] === "center" ? "center" : "left";
+              return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${header ? '<w:shd w:fill="EAF1FA"/>' : ""}</w:tcPr>${paragraph(await inlineRuns(cell.tokens, header ? { bold: true } : {}), { align })}</w:tc>`;
+            }))).join("")}</w:tr>`;
+            const rows = [await row(token.header, true)];
+            for (const cells of token.rows) rows.push(await row(cells, false));
+            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="DAE1E9"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${Array.from({ length: count }, () => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
+          }
         }
-      }
-      return output;
+        return output;
+      } finally { contentWidth = previousWidth; }
     };
     const tokens = markdownParser.lexer(editor.value.replace(/\r\n?/g, "\n"));
     const body = await blocks(tokens) || paragraph();
     const w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-    const documentNs = `xmlns:w="${w}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"`;
+    const documentNs = `xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="${w}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"`;
     const sect = `<w:sectPr><w:headerReference w:type="default" r:id="${headerId}"/><w:footerReference w:type="default" r:id="${footerId}"/>${layout.firstPageBlank ? `<w:headerReference w:type="first" r:id="${firstHeaderId}"/><w:footerReference w:type="first" r:id="${firstFooterId}"/>` : ""}<w:pgSz w:w="${pageWidth}" w:h="${pageHeight}"${layout.orientation === "landscape" ? ' w:orient="landscape"' : ""}/><w:pgMar w:top="1540" w:right="${side}" w:bottom="1350" w:left="${side}" w:header="600" w:footer="600"/><w:cols w:space="720"/>${layout.firstPageBlank ? "<w:titlePg/>" : ""}</w:sectPr>`;
     const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
     files.set("word/document.xml", `${xml}<w:document ${documentNs}><w:body>${body}${sect}</w:body></w:document>`);

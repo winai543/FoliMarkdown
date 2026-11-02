@@ -4,10 +4,10 @@ let chartPreviewTimer;
 let chartPreviewVersion = 0;
 
 function editableChartBlocks() {
-  let offset = 0, diagramIndex = 0;
+  let diagramIndex = 0;
   const blocks = [];
-  for (const token of markdownParser.lexer(editor.value)) {
-    const start = editor.value.indexOf(token.raw, offset);
+  visitMarkdownSource(markdownParser.lexer(editor.value), editor.value, (token, start) => {
+    if (["columnRow", "absoluteBlock"].includes(token.type)) return;
     let diagrams = 0;
     markdownParser.walkTokens([token], item => {
       if (item.type === "code" && ["mermaid", "chart", "diagram"].includes((item.lang || "").split(/\s+/)[0].toLowerCase())) diagrams++;
@@ -16,8 +16,7 @@ function editableChartBlocks() {
       blocks.push({ index: diagramIndex, start, end: start + token.raw.length, source: token.text, settings: parseChartSource(token.text) });
     }
     diagramIndex += diagrams;
-    if (start >= 0) offset = start + token.raw.length;
-  }
+  });
   return blocks;
 }
 function chartFormSettings() {

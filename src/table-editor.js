@@ -2,13 +2,12 @@
 let tableEditorSession = null;
 function editableTableBlocks() {
   const blocks = [];
-  let offset = 0, index = 0;
-  for (const token of markdownParser.lexer(editor.value)) {
-    const start = editor.value.indexOf(token.raw, offset);
-    if (token.type === 'table' && start >= 0) blocks.push({ index, start, end: start + token.raw.length, settings: tableFromToken(token) });
+  let index = 0;
+  visitMarkdownSource(markdownParser.lexer(editor.value), editor.value, (token, start) => {
+    if (['columnRow', 'absoluteBlock'].includes(token.type)) return;
+    if (token.type === 'table') blocks.push({ index, start, end: start + token.raw.length, settings: tableFromToken(token) });
     markdownParser.walkTokens([token], item => { if (item.type === 'table') index++; });
-    if (start >= 0) offset = start + token.raw.length;
-  }
+  });
   return blocks;
 }
 function tableChange(change, redraw = false) {

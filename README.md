@@ -62,6 +62,70 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 - Insert PNG, JPEG, GIF, WebP, and AVIF images by selecting a file, pasting, or dragging and dropping (up to 8 MB each, 16 MB per batch). The editor uses short `asset:` references and stores image data separately in the browser. SVG uploads are not supported.
 - Export Markdown (`.md`), standalone HTML, editable DOCX, and PDF; or use the browser's Print / Save as PDF dialog.
 
+## Floating content
+
+Use `::: absolute [top-right]` to float Markdown at a container corner. The other anchors are `top-left`, `bottom-left`, and `bottom-right`. Use `::: absolute [x=10, y=50]` for pixel offsets from the left and top. Close each block with `:::`.
+
+```markdown
+::: absolute [top-right]
+**Notice**
+This content floats in the top-right corner.
+:::
+
+::: absolute [x=10, y=50]
+Content at a specific position.
+:::
+```
+
+Positions refer to the nearest enclosing column, row, or floating block; at document level they refer to the current page's content area. Floating content does not reserve space, so leave room in the surrounding layout to avoid overlap. It stays on the page or container fragment where it appears rather than repeating on each page. HTML, PDF, and print preserve the positions; DOCX uses floating Word text boxes.
+
+The **Resume** template includes an embedded placeholder photo in the top-right corner of its header. Replace the image Markdown inside its `absolute` block with your photo. The placeholder works offline and is included in Markdown exports.
+
+## Column layouts
+
+Use `::: row` around a group of `::: col` blocks to place content side by side. Each `:::` closing line closes the current column or row. Columns have equal widths by default and support normal Markdown, including headings, lists, images, tables, and diagrams. Rows can be nested inside a column. Delimiters inside fenced code stay literal; incomplete containers display as text while you type.
+
+```markdown
+::: row
+::: col
+**Column 1**
+Left-hand content
+- First item
+- Second item
+:::
+
+::: col
+**Column 2**
+Right-hand content
+:::
+:::
+```
+
+Set relative widths with a positive number after `col`. For example, `[2]` and `[1]` split the available width in a **2:1** ratio after the gap. Bare `::: col` has weight 1. Decimal weights are supported (greater than 0, up to 1000). Each nested row has its own ratios.
+
+```markdown
+::: row
+::: col [2]
+Wider column
+:::
+::: col [1]
+Narrower column
+:::
+:::
+```
+
+The Resume template uses a 3:1 header and 2:1 experience/skills layout.
+
+Columns keep their layout in the preview, standalone HTML, PDF, print, and DOCX. Long rows continue across pages. Markdown export retains the column syntax, which requires a renderer supporting this extension. Templates use columns for resume sections, invoice addresses, meeting preparation, daily priorities, lesson materials, proposal approval, certificate signatures, and travel reminders.
+
+## Document templates
+
+Choose **Templates** in the top bar, **File → Templates**, or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
+
+Built-in templates include **Resume**, **Invoice**, **Meeting agenda**, **Project proposal**, **Daily schedule**, **Lesson plan**, **Student certificate**, **Wedding invitation**, and **Travel itinerary**. Replace the sample text and bracketed placeholders with your details. Invoice amounts and proposal budgets are examples; update totals manually. Certificates use landscape paper; invitations and certificates omit running headers, footers, and page numbers.
+
+Templates work offline, remain standard Markdown, and support the existing Markdown, HTML, DOCX, PDF, and print exports.
+
 ## Table editor
 
 Choose **Insert → Table** to open the visual table editor. Edit column headings and cells directly, use **＋ Add row / ＋ Add column**, and choose left, center, or right alignment for each column. Use the arrow buttons to reorder rows or columns and **×** to remove them. **Undo/Redo** reverses changes inside the dialog.
@@ -69,9 +133,9 @@ Choose **Insert → Table** to open the visual table editor. Edit column heading
 - **Keyboard:** Tab moves between fields; Enter moves to the next row and adds a row when needed. Press **Ctrl/⌘ + Enter** to save, or **Escape** to cancel.
 - **Spreadsheet paste:** paste tab-separated cells into a cell to fill a rectangular region. The editor expands the table as needed, up to 20 columns and 200 data rows. Pasting into a heading starts with the header row.
 - **Formatting:** cells support single-line inline Markdown such as `**bold**`, links, and code. Pipe characters are escaped automatically when generating the table.
-- **Edit existing tables:** click **Edit table** above a table in the document preview, or place the cursor inside a Markdown table and click **Insert → Table**. Tables split across pages reopen as one complete table. Saving replaces only that table; Cancel leaves the document unchanged.
+- **Edit existing tables:** hover over a table in the document preview and click the floating **Edit table** button, or place the cursor inside a Markdown table and click **Insert → Table**. Tables split across pages reopen as one complete table. Saving replaces only that table; Cancel leaves the document unchanged.
 
-The preview updates while you edit and shows the generated Markdown under **Markdown source**. Tables remain standard GFM Markdown and work with Markdown, HTML, DOCX, PDF, and print exports. Table editing controls are excluded from exports.
+The preview updates while you edit and shows the generated Markdown under **Markdown source**. Tables remain standard GFM Markdown and work with Markdown, HTML, DOCX, PDF, and print exports. Editing buttons also appear when focused with the keyboard, and stay visible on touch devices. They do not take up document space and are excluded from exports.
 
 ![Table dialog with editable headers and cells, column alignment, row and column controls, and live preview](docs/images/table-settings.png)
 
@@ -108,7 +172,7 @@ Choose a chart type to suit your data:
 
 </details>
 
-To update an existing chart, click **Edit chart** below its preview, or place the cursor in its fenced block and choose **Chart → Edit chart**. Adjust the fields and click **Save changes**. Saving updates that block and supports Undo/Redo; **Cancel**, **×**, or **Escape** closes the dialog without changing the document. The **Type** selector also lets you switch chart types before saving.
+To update an existing chart, hover over its preview and click the floating **Edit chart** button, or place the cursor in its fenced block and choose **Chart → Edit chart**. Adjust the fields and click **Save changes**. Saving updates that block and supports Undo/Redo; **Cancel**, **×**, or **Escape** closes the dialog without changing the document. The **Type** selector also lets you switch chart types before saving.
 
 Expand **Mermaid source** in the dialog to inspect the generated syntax. The chart stays in your Markdown, so it remains portable through Markdown export/import. The preview needs an internet connection to load Mermaid; the form can still save settings when the preview is unavailable. Existing built-in chart examples can be edited with the form, while diagrams with additional Mermaid commands remain editable in the source editor.
 
@@ -197,6 +261,7 @@ flowchart LR
 index.html                 HTML layout and script loading order
 styles/app.css             Application and print styles
 src/state.js               Shared configuration and application state
+src/columns.js             Row/column containers and nested source offsets
 src/markdown.js            Markdown parser configuration and preview rendering
 src/diagrams.js            Mermaid loading, rendering, and retries
 src/chart-model.js         Chart/timeline validation and Mermaid round trips

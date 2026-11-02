@@ -44,6 +44,25 @@ const { pathToFileURL } = require('node:url');
     await click('#tableUndo'); assert.equal(await page.evaluate('tableEditorSession.settings.headers.length'), 4);
     await save();
     const inserted = await page.$eval('#editor', input => input.value);
+    // Edit controls overlay the table and never add height or move its rows.
+    await page.mouse.move(0, 0);
+    const tableGeometry = () => page.$eval('#pages .document table', table => ({
+      top: table.getBoundingClientRect().top, height: table.getBoundingClientRect().height,
+      firstRow: table.rows[0].getBoundingClientRect().top
+    }));
+    const normalGeometry = await tableGeometry();
+    assert.equal(await page.$eval('#pages .table-edit', button => getComputedStyle(button).opacity), '0');
+    await page.hover('#pages .document table');
+    assert.equal(await page.$eval('#pages .table-edit', button => getComputedStyle(button).opacity), '1');
+    assert.deepEqual(await tableGeometry(), normalGeometry);
+    await page.screenshot({ path: '/tmp/mdword-floating-table-edit.png' });
+    await page.$eval('#pages .table-editor-caption', caption => caption.style.display = 'none');
+    assert.deepEqual(await tableGeometry(), normalGeometry, 'Removing edit control leaves table layout unchanged');
+    await page.$eval('#pages .table-editor-caption', caption => caption.style.removeProperty('display'));
+    await page.mouse.move(0, 0);
+    await page.focus('#pages .table-edit');
+    assert.equal(await page.$eval('#pages .table-edit', button => getComputedStyle(button).opacity), '1');
+
     assert.ok(inserted.includes('ไทย \\| English') && inserted.includes('**Bold**'));
     assert.equal(await page.evaluate('editableTableBlocks().length'), 1);
     await click('#pages .document .table-edit');
@@ -84,7 +103,10 @@ const { pathToFileURL } = require('node:url');
     });
     assert.deepEqual(exported, { controls: 0, rows: 100 });
     assert.equal(await page.evaluate('exportDocx().then(result => result.warnings)'), 0);
-    await page.setViewport({ width: 390, height: 844 }); await page.evaluate(() => openTableEditor(0));
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await page.evaluate(() => setView('preview'));
+    assert.equal(await page.$eval('#pages .table-edit', button => getComputedStyle(button).opacity), '1', 'Touch devices keep edit controls visible');
+    await page.evaluate(() => openTableEditor(0));
     assert.ok(await page.$eval('#tableDialog', dialog => dialog.getBoundingClientRect().width <= innerWidth));
     await page.keyboard.press('Escape');
     assert.deepEqual(errors, []);

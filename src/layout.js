@@ -65,13 +65,13 @@
     return page;
   }
   function fits(body) {
-    const last = body.lastElementChild;
+    const last = [...body.children].findLast(child => !child.classList.contains("markdown-absolute"));
     return !last || last.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom + 1;
   }
-  function splitTextBlock(block, body) {
+  function splitTextBlock(block, body, fitsWithin = () => fits(body)) {
     const nodes = [];
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) if (walker.currentNode.length && !walker.currentNode.parentElement?.closest(".table-editor-caption")) nodes.push(walker.currentNode);
+    while (walker.nextNode()) if (walker.currentNode.length && !walker.currentNode.parentElement?.closest(".table-editor-caption, .markdown-absolute")) nodes.push(walker.currentNode);
     const length = nodes.reduce((sum, node) => sum + node.length, 0);
     if (length < 2) return null;
     const positionAt = count => {
@@ -97,7 +97,7 @@
       const mid = Math.floor((low + high) / 2);
       const candidate = clonePart(0, mid);
       body.append(candidate);
-      const okay = fits(body);
+      const okay = fitsWithin();
       candidate.remove();
       if (okay) { best = mid; low = mid + 1; }
       else high = mid - 1;
@@ -108,7 +108,7 @@
     body.append(first);
     return rest;
   }
-  function splitRows(block, body) {
+  function splitRows(block, body, fitsWithin = () => fits(body)) {
     const table = block.tagName === "TABLE";
     const children = table ? [...block.tBodies[0]?.rows || []] : [...block.children];
     if (children.length < 2) return null;
@@ -125,13 +125,42 @@
     let splitAt = 0;
     for (const child of children) {
       firstHolder.append(child.cloneNode(true));
-      if (!fits(body)) { firstHolder.lastChild.remove(); break; }
+      if (!fitsWithin()) { firstHolder.lastChild.remove(); break; }
       splitAt++;
     }
     if (!splitAt || splitAt === children.length) { first.remove(); return null; }
     children.slice(splitAt).forEach(child => restHolder.append(child.cloneNode(true)));
     if (block.tagName === "OL") rest.start = (Number(block.getAttribute("start")) || 1) + splitAt;
     rest.removeAttribute("id");
+    return rest;
+  }
+  function splitColumnRow(block, body, fitsWithin = () => fits(body)) {
+    const first = block.cloneNode(false), rest = block.cloneNode(false);
+    for (const column of block.children) {
+      first.append(column.cloneNode(false)); rest.append(column.cloneNode(false));
+    }
+    body.append(first);
+    let moved = false, remaining = false;
+    [...block.children].forEach((column, index) => {
+      const target = first.children[index], remainder = rest.children[index];
+      const children = [...column.children];
+      while (children.length) {
+        const child = children.shift().cloneNode(true);
+        target.append(child);
+        if (child.classList.contains('markdown-absolute')) continue;
+        if (fitsWithin()) { moved = true; continue; }
+        child.remove();
+        const tail = child.classList.contains('markdown-row') ? splitColumnRow(child, target, fitsWithin)
+          : ['TABLE', 'UL', 'OL'].includes(child.tagName) ? splitRows(child, target, fitsWithin)
+          : child.classList.contains('mermaid-figure') ? null : splitTextBlock(child, target, fitsWithin);
+        if (tail) { moved = true; remainder.append(tail); }
+        else remainder.append(child);
+        remainder.append(...children.map(element => element.cloneNode(true)));
+        remaining = true;
+        break;
+      }
+    });
+    if (!moved || !remaining) { first.remove(); return null; }
     return rest;
   }
   function paginate() {
@@ -185,11 +214,11 @@
         continue;
       }
       body.append(block);
-      if (fits(body)) continue;
+      if (block.classList.contains("markdown-absolute") || fits(body)) continue;
       block.remove();
       const splittable = ["UL", "OL", "TABLE"].includes(block.tagName);
-      const trySplit = () => block.classList.contains("mermaid-figure") ? null : (splittable ? splitRows(block, body) : splitTextBlock(block, body));
-      if (body.children.length) {
+      const trySplit = () => block.classList.contains("markdown-row") ? splitColumnRow(block, body) : block.classList.contains("mermaid-figure") ? null : (splittable ? splitRows(block, body) : splitTextBlock(block, body));
+      if ([...body.children].some(child => !child.classList.contains("markdown-absolute"))) {
         const remainder = trySplit();
         if (remainder) {
           page = makePage(pages.children.length + 1);

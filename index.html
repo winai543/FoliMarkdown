@@ -19,6 +19,7 @@
     <span class="saved-indicator" id="saveStatus">All changes saved</span>
     <div class="title-actions">
       <button class="top-button" id="libraryTop" title="Document Library" aria-label="Open document library"><span aria-hidden="true">▤</span><span class="library-top-label"> &nbsp;Document Library</span></button>
+      <button class="top-button" id="templatesTop" title="Create a document from a template">Templates</button>
       <button class="top-button" id="newTop" title="Create new document">＋ New</button>
       <button class="top-button share-button" id="downloadTop" title="Download Markdown file">⇩ &nbsp;Download</button>
     </div>
@@ -99,6 +100,7 @@
   <div class="ribbon" data-ribbon="file" hidden>
     <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="library"><svg viewBox="0 0 24 24"><path d="M3 5h18v15H3zM7 2h10v3M7 10h10M7 14h10"/></svg><span>Document Library</span></button>
+      <button class="tool big" data-action="templates"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8"/><rect x="14" y="3" width="7" height="8"/><path d="M3 15h7v6H3zM14 15h7v6h-7z"/></svg><span>Templates</span></button>
       <button class="tool big" data-action="new"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-4-4v8"/></svg><span>New</span></button>
       <button class="tool big" data-action="open"><svg viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></svg><span>Open file</span></button>
       <button class="tool big" data-action="openFolder" title="Open a Markdown file and its relative images from a folder"><svg viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></svg><span>Open folder</span></button>
@@ -234,11 +236,19 @@
 <div class="library-overlay" id="libraryOverlay" hidden>
   <section class="library-panel" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
     <div class="library-head"><h2 id="libraryTitle">Document Library</h2><button class="icon-only" id="closeLibrary" aria-label="Close document library">×</button></div>
-    <div class="library-actions"><input id="librarySearch" type="search" placeholder="Search document titles" aria-label="Search document titles"><button class="library-button primary" id="libraryNew">＋ New document</button></div>
+    <div class="library-actions"><input id="librarySearch" type="search" placeholder="Search document titles" aria-label="Search document titles"><button class="library-button" id="libraryTemplates">Templates</button><button class="library-button primary" id="libraryNew">＋ New document</button></div>
     <div class="library-filter"><button class="library-button" data-library-filter="active" aria-pressed="true">Documents</button><button class="library-button" data-library-filter="trash" aria-pressed="false">Trash</button></div>
     <div class="library-list" id="libraryList"></div>
   </section>
 </div>
+<dialog id="templateDialog" class="chart-dialog template-dialog" aria-labelledby="templateTitle">
+  <header class="chart-dialog-head"><div><h2 id="templateTitle">Choose a template</h2><p>Start with a ready-to-edit document. Your current document is saved separately.</p></div><button type="button" id="templateClose" class="icon-only" aria-label="Close templates">×</button></header>
+  <div class="template-body">
+    <nav id="templateList" class="template-list" aria-label="Document templates"></nav>
+    <section class="template-preview-panel" aria-labelledby="templatePreviewTitle"><h3 id="templatePreviewTitle"></h3><article id="templatePreview" class="document template-preview"></article></section>
+  </div>
+  <footer class="chart-dialog-footer"><p id="templateError" class="chart-error" role="alert"></p><button type="button" id="templateCancel" class="library-button">Cancel</button><button type="button" id="templateCreate" class="library-button primary">Create document</button></footer>
+</dialog>
 <dialog id="chartDialog" class="chart-dialog" aria-labelledby="chartDialogTitle">
   <form id="chartForm">
     <header class="chart-dialog-head"><div><h2 id="chartDialogTitle">Create chart</h2><p>Set your data. We’ll create the chart for you.</p></div><button type="button" id="chartClose" class="icon-only" aria-label="Close chart settings">×</button></header>
@@ -302,6 +312,7 @@
 <script src="vendor/marked.min.js"></script>
 <script src="src/state.js"></script>
 <script src="src/assets.js"></script>
+<script src="src/columns.js"></script>
 <script src="src/markdown.js"></script>
 <script src="src/image-paths.js"></script>
 <script src="src/diagrams.js"></script>
@@ -320,6 +331,7 @@
 <script src="src/desktop.js"></script>
 <script src="src/files.js"></script>
 <script src="src/library.js"></script>
+<script src="src/templates.js"></script>
 <script src="src/pdf.js"></script>
 <script src="src/docx.js"></script>
 <script src="src/actions.js"></script>

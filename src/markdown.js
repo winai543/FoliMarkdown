@@ -27,7 +27,7 @@
   const markdownParser = new marked.Marked({
     gfm: true,
     breaks: false,
-    extensions: [{
+    extensions: [COLUMN_EXTENSION, ABSOLUTE_EXTENSION, {
       name: "pagebreak",
       level: "block",
       start(source) { return source.search(/<!--\s*pagebreak\s*-->/i); },
@@ -85,11 +85,11 @@
   function renderMarkdown(markdown) {
     const source = markdown.replace(/\r\n?/g, "\n");
     const tokens = markdownParser.lexer(source);
-    let offset = 0;
-    tokens.forEach(token => {
+    markdownParser.walkTokens(tokens, token => {
       if (token.type === "table") token._editableTable = !!tableFromToken(token);
+    });
+    visitMarkdownSource(tokens, source, (token, offset) => {
       if (token.type === "heading") token._line = source.slice(0, offset).split("\n").length - 1;
-      offset += token.raw.length;
     });
     const first = tokens.filter(token => token.type !== "space");
     if (first[0]?.type === "heading" && first[1]?.type === "paragraph") first[1]._lead = true;

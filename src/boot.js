@@ -3,6 +3,7 @@
 initializeChartEditor();
 initializeDiagramEditor();
 initializeTableEditor();
+initializeDocumentTemplates();
 startLibrary();
 initializeDesktop().catch(error => {
   console.error("Desktop setup failed:", error);
