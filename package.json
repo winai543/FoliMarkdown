@@ -8,7 +8,7 @@
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "build:web": "node scripts/build-web.cjs",
-    "check": "node scripts/sync-export-css.cjs --check && node tests/desktop.cjs",
+    "check": "node scripts/sync-export-css.cjs --check && node tests/export-css.cjs && node tests/desktop.cjs",
     "test": "npm run check && node tests/smoke.cjs"
   },
   "devDependencies": {
