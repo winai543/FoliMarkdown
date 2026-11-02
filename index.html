@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>FoliMarkdown — Markdown Document Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="googleFontStyle" rel="stylesheet">
+  <link id="appStyle" rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="titlebar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2.5h9l3 3V21H6a2 2 0 0 1-2-2V4.5a2 2 0 0 1 2-2Z"/><path d="M15 2.5V6h3M8 11h7M8 15h5"/></svg></span><span>FoliMarkdown</span></div>
+    <span class="title-divider"></span>
+    <input class="document-name" id="docName" aria-label="Document name" value="My Document" maxlength="100" spellcheck="false">
+    <span class="saved-indicator" id="saveStatus">All changes saved</span>
+    <div class="title-actions">
+      <button class="top-button" id="libraryTop" title="Document Library" aria-label="Open document library"><span aria-hidden="true">▤</span><span class="library-top-label"> &nbsp;Document Library</span></button>
+      <button class="top-button" id="newTop" title="Create new document">＋ New</button>
+      <button class="top-button share-button" id="downloadTop" title="Download Markdown file">⇩ &nbsp;Download</button>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Ribbon tabs">
+    <button class="tab file-tab" data-tab="file">File</button>
+    <button class="tab active" data-tab="home">Home</button>
+    <button class="tab" data-tab="insert">Insert</button>
+    <button class="tab" data-tab="chart">Chart</button>
+    <button class="tab" data-tab="diagram">Diagram</button>
+    <button class="tab" data-tab="layout">Layout</button>
+    <button class="tab" data-tab="view">View</button>
+  </nav>
+
+  <div class="ribbon" data-ribbon="home">
+    <div class="ribbon-group">
+      <div class="group-content">
+        <button class="tool big" data-action="undo" title="Undo (Ctrl/⌘ Z)"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -3)"/></svg><span>Undo</span></button>
+        <button class="tool big" data-action="redo" title="Redo (Ctrl/⌘ Shift Z)"><svg viewBox="0 0 24 24"><path d="m15 4 5 5-5 5M20 9H10a6 6 0 0 0 0 12"/></svg><span>Redo</span></button>
+      </div>
+      <div class="group-label">Clipboard</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="group-content stack">
+        <div class="toolbar-row">
+          <select class="style-select" id="styleSelect" aria-label="Text style">
+            <option value="paragraph">Normal text</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+            <option value="quote">Block quote</option>
+          </select>
+          <select class="style-select" id="docFont" aria-label="Document font" title="Change the font for this document">
+            <option value="system">Default</option>
+            <option value="Sarabun">Sarabun</option>
+            <option value="Prompt">Prompt</option>
+            <option value="Kanit">Kanit</option>
+            <option value="Noto Sans Thai">Noto Sans Thai</option>
+            <option value="Noto Serif Thai">Noto Serif Thai</option>
+            <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
+          </select>
+        </div>
+        <div class="toolbar-row">
+          <button class="tool small text-icon" data-action="bold" title="Bold (Ctrl/⌘ B)">B</button>
+          <button class="tool small text-icon italic" data-action="italic" title="Italic (Ctrl/⌘ I)">I</button>
+          <button class="tool small text-icon strike" data-action="strike" title="Strikethrough">S</button>
+          <button class="tool small" data-action="code" title="Inline code"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-8-2 16"/></svg></button>
+          <button class="tool small" data-action="link" title="Insert link (Ctrl/⌘ K)"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 .3l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.3l-3 3a5 5 0 0 0 7 7l2-2"/></svg></button>
+        </div>
+      </div>
+      <div class="group-label">Font</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="group-content stack">
+        <div class="toolbar-row">
+          <button class="tool small" data-action="bullet" title="Bulleted list"><svg viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
+          <button class="tool small" data-action="number" title="Numbered list"><svg viewBox="0 0 24 24"><path d="M10 6h11M10 12h11M10 18h11M3 5h2v4m-2 3h2a2 2 0 0 1 0 4H3v2h3"/></svg></button>
+          <button class="tool small" data-action="task" title="Task list"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="5" height="5" rx="1"/><path d="m3 5 1.5 1.5L8 3M11 5h10M2 15h5v5H2zM11 17h10"/></svg></button>
+          <button class="tool small" data-action="quote" title="Block quote"><svg viewBox="0 0 24 24"><path d="M8 9H4v5h4l-2 4m12-9h-4v5h4l-2 4"/></svg></button>
+        </div>
+        <div class="toolbar-row">
+          <button class="tool small" data-action="h1" title="Heading 1"><b>H1</b></button>
+          <button class="tool small" data-action="h2" title="Heading 2"><b>H2</b></button>
+          <button class="tool small" data-action="h3" title="Heading 3"><b>H3</b></button>
+          <span class="hint">Paragraph style</span>
+        </div>
+      </div>
+      <div class="group-label">Paragraph</div>
+    </div>
+    <div class="ribbon-group">
+      <div class="group-content">
+        <button class="tool big" data-action="find" title="Find in document"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Find</span></button>
+      </div>
+      <div class="group-label">Editing</div>
+    </div>
+  </div>
+
+  <div class="ribbon" data-ribbon="file" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" data-action="library"><svg viewBox="0 0 24 24"><path d="M3 5h18v15H3zM7 2h10v3M7 10h10M7 14h10"/></svg><span>Document Library</span></button>
+      <button class="tool big" data-action="new"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-4-4v8"/></svg><span>New</span></button>
+      <button class="tool big" data-action="open"><svg viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></svg><span>Open file</span></button>
+      <button class="tool big" data-action="download"><svg viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/></svg><span>Save .md</span></button>
+      <button class="tool big" data-action="docx" title="Export editable DOCX file"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 5 2-8 2 8 2-8 2 8"/></svg><span>Export DOCX</span></button>
+      <button class="tool big" data-action="pdf" title="Download PDF of the displayed pages"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 17h3a2 2 0 0 0 0-4H8v7m7 0v-7h2a2 2 0 0 1 0 4h-2m0-4v7"/></svg><span>Export PDF</span></button>
+      <button class="tool big" data-action="export"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 4h8"/></svg><span>Export HTML</span></button>
+    </div><div class="group-label">Documents</div></div>
+    <div class="ribbon-group"><div class="group-content"><span class="hint">Drop a .md or .txt file here to open it</span></div><div class="group-label">Tip</div></div>
+  </div>
+
+  <div class="ribbon" data-ribbon="insert" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" data-action="link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 .3l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.3l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>Link</span></button>
+      <button class="tool big" data-action="image" title="Choose, paste, or drop an image"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m2 18 6-6 4 4 3-3 7 7"/></svg><span>Image</span></button>
+      <button class="tool big" data-action="table"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"/><path d="M2 9h20M9 3v18m6-18v18M2 15h20"/></svg><span>Table</span></button>
+      <button class="tool big" data-action="codeblock"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="m9 9-3 3 3 3m6-6 3 3-3 3"/></svg><span>Code block</span></button>
+      <button class="tool big" data-action="pagebreak" title="New page (Ctrl/⌘ Enter)"><svg viewBox="0 0 24 24"><path d="M5 2h14v7M5 22h14v-7M3 12h18m-11-3 3 3-3 3"/></svg><span>Page break</span></button>
+      <button class="tool big" data-action="rule"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg><span>Horizontal rule</span></button>
+    </div><div class="group-label">Markdown · Paste or drop images</div></div>
+  </div>
+
+  <div class="ribbon" data-ribbon="chart" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" data-action="chartBar" title="Insert Mermaid bar chart in Markdown"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21v-8h4v8m2 0V5h4v16m2 0v-12h4v12"/></svg><span>Bar chart</span></button>
+      <button class="tool big" data-action="chartLine" title="Insert Mermaid line chart in Markdown"><svg viewBox="0 0 24 24"><path d="M3 21h18M4 16l5-6 4 3 6-8 2 2M4 16h.01M9 10h.01M13 13h.01M19 5h.01"/></svg><span>Line chart</span></button>
+      <button class="tool big" data-action="chartPie" title="Insert Mermaid pie chart in Markdown"><svg viewBox="0 0 24 24"><path d="M12 2v10h10A10 10 0 1 1 12 2zm3 0a10 10 0 0 1 7 7h-7z"/></svg><span>Pie chart</span></button>
+    </div><div class="group-label">Charts</div></div>
+    <div class="ribbon-group"><div class="group-content stack">
+      <span class="hint">Click a chart type to insert an example</span>
+      <span class="hint">Edit values and labels in the ```mermaid block</span>
+    </div><div class="group-label">Charts from Markdown</div></div>
+  </div>
+
+  <div class="ribbon" data-ribbon="diagram" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" data-action="diagramFlow" title="Insert Mermaid flowchart"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="7" height="6" rx="1"/><rect x="15" y="2" width="7" height="6" rx="1"/><rect x="9" y="16" width="7" height="6" rx="1"/><path d="M9 5h6M12 8v8"/></svg><span>Flowchart</span></button>
+      <button class="tool big" data-action="diagramSequence" title="Insert sequence diagram"><svg viewBox="0 0 24 24"><path d="M5 3v18M19 3v18M5 8h14m-3-3 3 3-3 3M19 16H5m3-3-3 3 3 3"/></svg><span>Sequence</span></button>
+      <button class="tool big" data-action="diagramER" title="Insert ER diagram"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="7" height="6" rx="1"/><rect x="15" y="14" width="7" height="6" rx="1"/><path d="M9 7h5v10h1"/></svg><span>ER Diagram</span></button>
+      <button class="tool big" data-action="diagramTimeline" title="Insert timeline"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 7v10m6-10v10m6-10v10"/><circle cx="6" cy="12" r="2" fill="white"/><circle cx="12" cy="12" r="2" fill="white"/><circle cx="18" cy="12" r="2" fill="white"/></svg><span>Timeline</span></button>
+    </div><div class="group-label">Diagrams</div></div>
+    <div class="ribbon-group"><div class="group-content stack">
+      <span class="hint">Click to insert a template, then edit its Markdown</span>
+      <span class="hint">The preview updates after you finish typing</span>
+    </div><div class="group-label">Diagrams from Markdown</div></div>
+  </div>
+
+  <div class="ribbon" data-ribbon="layout" hidden>
+    <div class="ribbon-group"><div class="group-content stack">
+      <select class="ribbon-select" id="paperSize" aria-label="Paper size"><option value="a4">A4</option><option value="letter">Letter</option></select>
+      <select class="ribbon-select" id="orientation" aria-label="Orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+    </div><div class="group-label">Paper</div></div>
+    <div class="ribbon-group"><div class="group-content stack">
+      <select class="ribbon-select" id="margin" aria-label="Margins"><option value="normal">Normal</option><option value="narrow">Narrow</option><option value="wide">Wide</option></select>
+      <button class="tool" data-action="pagebreak">＋ Page break</button>
+    </div><div class="group-label">Page setup</div></div>
+    <div class="ribbon-group"><div class="group-content stack">
+      <input class="ribbon-input" id="headerText" aria-label="Header text" placeholder="Header, e.g. {title}" value="{title}">
+      <input class="ribbon-input" id="footerText" aria-label="Footer text" placeholder="Footer" value="FoliMarkdown">
+    </div><div class="group-label">Header / Footer</div></div>
+    <div class="ribbon-group"><div class="group-content stack">
+      <label class="ribbon-check"><input id="pageNumbers" type="checkbox" checked> Show page numbers</label>
+      <label class="ribbon-check"><input id="firstPageBlank" type="checkbox"> Hide header/footer on first page</label>
+    </div><div class="group-label">Options</div></div>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" data-action="print" title="Print or save as PDF (Ctrl/⌘ P)"><svg viewBox="0 0 24 24"><path d="M6 8V2h12v6M6 18H3V9h18v9h-3M6 15h12v7H6z"/></svg><span>Print / PDF</span></button>
+      <button class="tool big" data-action="pdf" title="Download PDF directly"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 17h3a2 2 0 0 0 0-4H8v7m7 0v-7h2a2 2 0 0 1 0 4h-2m0-4v7"/></svg><span>.pdf file</span></button>
+      <button class="tool big" data-action="docx" title="Export DOCX file"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 5 2-8 2 8 2-8 2 8"/></svg><span>.docx file</span></button>
+    </div><div class="group-label">Export</div></div>
+  </div>
+
+  <div class="ribbon" data-ribbon="view" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <div class="view-options">
+        <button class="view-pill" data-view="source">Markdown</button>
+        <button class="view-pill active" data-view="split">Split view</button>
+        <button class="view-pill" data-view="preview">Document preview</button>
+      </div>
+    </div><div class="group-label">Document view</div></div>
+    <div class="ribbon-group"><div class="group-content">
+      <button class="tool big" id="toggleNav"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M9 3v18M5 8h2M5 12h2"/></svg><span>Outline</span></button>
+    </div><div class="group-label">Display</div></div>
+  </div>
+
+  <main class="workspace">
+    <aside class="navigation" id="navigation">
+      <div class="nav-header"><span>Navigation</span><button class="icon-only" id="closeNav" aria-label="Close navigation">×</button></div>
+      <label class="nav-search"><input id="search" type="search" placeholder="Find in document" aria-label="Find in document"></label>
+      <div class="nav-replace">
+        <input id="replacement" type="text" placeholder="Replace with..." aria-label="Replacement text">
+        <div class="search-controls">
+          <span id="searchCount" role="status" aria-live="polite">0 matches</span>
+          <button id="searchPrevious" title="Previous result" aria-label="Previous result">↑</button>
+          <button id="searchNext" title="Next result" aria-label="Next result">↓</button>
+          <button id="replaceOne">Replace</button>
+          <button id="replaceAll">Replace all</button>
+        </div>
+      </div>
+      <div class="nav-tabs"><button class="nav-tab active" data-nav="outline">Headings</button><button class="nav-tab" data-nav="results">Search results</button></div>
+      <div class="outline" id="outline"></div>
+      <div class="nav-footer">Click a heading to jump to it</div>
+    </aside>
+    <section class="editor-region" id="editorRegion">
+      <div class="source-side">
+        <div class="pane-heading"><span>EDIT MARKDOWN</span><span class="badge">.md</span></div>
+        <div class="source-wrap" id="sourceWrap"><div class="editor-stack"><div id="searchHighlights" aria-hidden="true" hidden></div><textarea id="editor" aria-label="Markdown editor" spellcheck="false"></textarea></div></div>
+      </div>
+      <div class="preview-side">
+        <div class="pane-heading"><span>Document preview</span><span id="previewLabel" class="hint">Live preview</span></div>
+        <div class="preview-scroll" id="previewScroll">
+          <div class="pages" id="pages"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="statusbar">
+    <button class="status-button mobile-menu" id="openNav">☰ &nbsp;Outline</button>
+    <span id="wordCount">0 words</span><span id="charCount">0 characters</span><span id="lineCount">1 line</span><span id="pageCount">1 page</span>
+    <span class="spacer"></span>
+    <span id="statusFormat">Markdown</span>
+    <button class="status-button" data-view="source" title="Markdown">⌨</button>
+    <button class="status-button" data-view="split" title="Split view">◫</button>
+    <button class="status-button" data-view="preview" title="Document preview">▣</button>
+    <button class="status-button" id="zoomOut" aria-label="Zoom out">−</button>
+    <input class="zoom-range" id="zoom" type="range" min="70" max="130" step="10" value="100" aria-label="Document zoom">
+    <button class="status-button" id="zoomIn" aria-label="Zoom in">＋</button>
+    <span id="zoomLabel">100%</span>
+  </footer>
+</div>
+<div class="library-overlay" id="libraryOverlay" hidden>
+  <section class="library-panel" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
+    <div class="library-head"><h2 id="libraryTitle">Document Library</h2><button class="icon-only" id="closeLibrary" aria-label="Close document library">×</button></div>
+    <div class="library-actions"><input id="librarySearch" type="search" placeholder="Search document titles" aria-label="Search document titles"><button class="library-button primary" id="libraryNew">＋ New document</button></div>
+    <div class="library-filter"><button class="library-button" data-library-filter="active" aria-pressed="true">Documents</button><button class="library-button" data-library-filter="trash" aria-pressed="false">Trash</button></div>
+    <div class="library-list" id="libraryList"></div>
+  </section>
+</div>
+<input id="fileInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+<input id="imageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" multiple hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<style id="pagePrintStyle"></style>
+
+<script src="vendor/html2canvas.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/marked.min.js"></script>
+<script src="src/state.js"></script>
+<script src="src/assets.js"></script>
+<script src="src/markdown.js"></script>
+<script src="src/diagrams.js"></script>
+<script src="src/layout.js"></script>
+<script src="src/search.js"></script>
+<script src="src/storage.js"></script>
+<script src="src/editor.js"></script>
+<script src="src/view.js"></script>
+<script src="src/export-styles.js"></script>
+<script src="src/files.js"></script>
+<script src="src/library.js"></script>
+<script src="src/pdf.js"></script>
+<script src="src/docx.js"></script>
+<script src="src/actions.js"></script>
+<script src="src/events.js"></script>
+<script src="src/boot.js"></script>
+</body>
+</html>
