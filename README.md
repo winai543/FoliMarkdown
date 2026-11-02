@@ -1,8 +1,12 @@
 # FoliMarkdown
 
+**[Open the live demo →](https://winai543.github.io/FoliMarkdown/)**
+
 A Markdown document editor with paginated previews, document storage, and exports. Open `index.html` in a browser; no build step or server is required. All local CSS and JavaScript files must remain alongside `index.html` in their folders.
 
 ![FoliMarkdown desktop interface showing the formatting toolbar, document outline, Markdown editor, and live paginated preview](docs/images/folimarkdown-ui.png)
+
+The demo runs directly in your browser. Documents and images stay in your browser storage; use Markdown export/import to move them between the demo, local files, and the desktop app. GitHub Pages deploys the static editor automatically when its source files change on `main`.
 
 ## Desktop app (Tauri 2)
 
