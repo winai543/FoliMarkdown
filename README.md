@@ -54,11 +54,20 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
 - A4/Letter paper, portrait/landscape, margins, headers, footers, page numbers, page breaks, and document fonts.
+- Form-based settings for bar, line, pie charts, and timelines: edit titles, axis labels/limits, and data rows with a live preview. Click **Edit chart** on a preview, or place the cursor inside its Markdown block and choose **Chart → Edit chart**. Advanced Mermaid syntax remains editable in the source.
 - Mermaid charts and diagrams from fenced `mermaid`, `chart`, or `diagram` blocks. Mermaid is loaded on demand from a CDN and needs an internet connection; the rest of the editor works offline.
 - Find and replace (one or all), result highlighting, outline navigation, undo/redo, and keyboard shortcuts.
 - Multiple documents in IndexedDB: create, rename, duplicate, move to Trash, restore, or permanently delete. Autosave and draft recovery are enabled. If IndexedDB is unavailable, the app falls back to `localStorage` with limited capacity.
 - Insert PNG, JPEG, GIF, WebP, and AVIF images by selecting a file, pasting, or dragging and dropping (up to 8 MB each, 16 MB per batch). The editor uses short `asset:` references and stores image data separately in the browser. SVG uploads are not supported.
 - Export Markdown (`.md`), standalone HTML, editable DOCX, and PDF; or use the browser's Print / Save as PDF dialog.
+
+## Chart and timeline settings
+
+Choose **Chart → Bar chart / Line chart / Pie chart**, or **Diagram → Timeline**. Fill in the title and rows, preview the result, and click **Insert into document**. Use **Add row** or **×** to change the data. Bar/line charts support optional axis labels and a manual range; leave both limits blank for automatic scaling.
+
+To update an existing chart, click **Edit chart** below its preview, or place the cursor in its fenced block and choose **Chart → Edit chart**. Saving updates that block and supports Undo/Redo. Closing the form or choosing Cancel leaves the document unchanged. Forms can also edit the original built-in examples; diagrams with additional Mermaid commands stay in the source editor to preserve their syntax.
+
+![Chart settings form with editable data rows and a live bar chart preview](docs/images/chart-settings.png)
 
 ## Export details
 
@@ -101,6 +110,8 @@ styles/app.css             Application and print styles
 src/state.js               Shared configuration and application state
 src/markdown.js            Markdown parser configuration and preview rendering
 src/diagrams.js            Mermaid loading, rendering, and retries
+src/chart-model.js         Chart/timeline validation and Mermaid round trips
+src/chart-editor.js        Form-based chart settings and live preview
 src/layout.js              Paper settings, pagination, and visual readiness
 src/search.js              Search, highlights, outline, and replace
 src/storage.js             IndexedDB, records, autosave, and draft handling

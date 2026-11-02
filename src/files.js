@@ -45,6 +45,7 @@
   }
   function exportHtml() {
     const printedPages = pages.cloneNode(true);
+    printedPages.querySelectorAll(".diagram-edit").forEach(button => button.remove());
     let css;
     try {
       // Available when served over HTTP; not readable from file:// in some browsers.

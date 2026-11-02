@@ -142,7 +142,18 @@
     const source = document.createElement("div");
     source.innerHTML = lastRenderedHtml;
     const figures = [...source.querySelectorAll(".mermaid-figure")];
-    figures.forEach(populateDiagram);
+    const editableCharts = new Set(editableChartBlocks().filter(block => block.settings).map(block => block.index));
+    figures.forEach(figure => {
+      populateDiagram(figure);
+      if (editableCharts.has(Number(figure.dataset.diagramIndex))) {
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "diagram-edit library-button";
+        edit.textContent = "Edit chart";
+        edit.setAttribute("aria-label", "Edit chart or timeline settings");
+        figure.append(edit);
+      }
+    });
     let page = makePage(1);
     let body = page.querySelector(".page-body");
     const queue = [...source.children];

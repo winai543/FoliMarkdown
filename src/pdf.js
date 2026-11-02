@@ -19,6 +19,7 @@
       // Freeze the pages: image/font loading can trigger repagination while an export is running.
       const staging = pages.cloneNode(true);
       staging.id = "pdfStaging";
+      staging.querySelectorAll(".diagram-edit").forEach(button => button.remove());
       staging.style.cssText += ";position:fixed;left:-12000px;top:0;z-index:-1;pointer-events:none";
       staging.querySelectorAll(".page").forEach(page => { page.style.zoom = "1"; page.style.boxShadow = "none"; });
       document.body.append(staging);

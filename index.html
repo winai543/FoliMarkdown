@@ -122,13 +122,14 @@
 
   <div class="ribbon" data-ribbon="chart" hidden>
     <div class="ribbon-group"><div class="group-content">
-      <button class="tool big" data-action="chartBar" title="Insert Mermaid bar chart in Markdown"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21v-8h4v8m2 0V5h4v16m2 0v-12h4v12"/></svg><span>Bar chart</span></button>
-      <button class="tool big" data-action="chartLine" title="Insert Mermaid line chart in Markdown"><svg viewBox="0 0 24 24"><path d="M3 21h18M4 16l5-6 4 3 6-8 2 2M4 16h.01M9 10h.01M13 13h.01M19 5h.01"/></svg><span>Line chart</span></button>
-      <button class="tool big" data-action="chartPie" title="Insert Mermaid pie chart in Markdown"><svg viewBox="0 0 24 24"><path d="M12 2v10h10A10 10 0 1 1 12 2zm3 0a10 10 0 0 1 7 7h-7z"/></svg><span>Pie chart</span></button>
+      <button class="tool big" data-action="chartBar" title="Configure a bar chart"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21v-8h4v8m2 0V5h4v16m2 0v-12h4v12"/></svg><span>Bar chart</span></button>
+      <button class="tool big" data-action="chartLine" title="Configure a line chart"><svg viewBox="0 0 24 24"><path d="M3 21h18M4 16l5-6 4 3 6-8 2 2M4 16h.01M9 10h.01M13 13h.01M19 5h.01"/></svg><span>Line chart</span></button>
+      <button class="tool big" data-action="chartPie" title="Configure a pie chart"><svg viewBox="0 0 24 24"><path d="M12 2v10h10A10 10 0 1 1 12 2zm3 0a10 10 0 0 1 7 7h-7z"/></svg><span>Pie chart</span></button>
+      <button class="tool big" data-action="editChart" title="Place the cursor in a chart block, then click to edit"><svg viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg><span>Edit chart</span></button>
     </div><div class="group-label">Charts</div></div>
     <div class="ribbon-group"><div class="group-content stack">
-      <span class="hint">Click a chart type to insert an example</span>
-      <span class="hint">Edit values and labels in the ```mermaid block</span>
+      <span class="hint">Choose a chart type to open its settings</span>
+      <span class="hint">Edit labels and values in a simple form</span>
     </div><div class="group-label">Charts from Markdown</div></div>
   </div>
 
@@ -137,11 +138,11 @@
       <button class="tool big" data-action="diagramFlow" title="Insert Mermaid flowchart"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="7" height="6" rx="1"/><rect x="15" y="2" width="7" height="6" rx="1"/><rect x="9" y="16" width="7" height="6" rx="1"/><path d="M9 5h6M12 8v8"/></svg><span>Flowchart</span></button>
       <button class="tool big" data-action="diagramSequence" title="Insert sequence diagram"><svg viewBox="0 0 24 24"><path d="M5 3v18M19 3v18M5 8h14m-3-3 3 3-3 3M19 16H5m3-3-3 3 3 3"/></svg><span>Sequence</span></button>
       <button class="tool big" data-action="diagramER" title="Insert ER diagram"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="7" height="6" rx="1"/><rect x="15" y="14" width="7" height="6" rx="1"/><path d="M9 7h5v10h1"/></svg><span>ER Diagram</span></button>
-      <button class="tool big" data-action="diagramTimeline" title="Insert timeline"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 7v10m6-10v10m6-10v10"/><circle cx="6" cy="12" r="2" fill="white"/><circle cx="12" cy="12" r="2" fill="white"/><circle cx="18" cy="12" r="2" fill="white"/></svg><span>Timeline</span></button>
+      <button class="tool big" data-action="diagramTimeline" title="Configure a timeline"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 7v10m6-10v10m6-10v10"/><circle cx="6" cy="12" r="2" fill="white"/><circle cx="12" cy="12" r="2" fill="white"/><circle cx="18" cy="12" r="2" fill="white"/></svg><span>Timeline</span></button>
     </div><div class="group-label">Diagrams</div></div>
     <div class="ribbon-group"><div class="group-content stack">
-      <span class="hint">Click to insert a template, then edit its Markdown</span>
-      <span class="hint">The preview updates after you finish typing</span>
+      <span class="hint">Timeline opens a form for periods and events</span>
+      <span class="hint">Other diagrams use editable Mermaid templates</span>
     </div><div class="group-label">Diagrams from Markdown</div></div>
   </div>
 
@@ -235,6 +236,24 @@
     <div class="library-list" id="libraryList"></div>
   </section>
 </div>
+<dialog id="chartDialog" class="chart-dialog" aria-labelledby="chartDialogTitle">
+  <form id="chartForm">
+    <header class="chart-dialog-head"><div><h2 id="chartDialogTitle">Create chart or timeline</h2><p>Set your data. We’ll create the chart for you.</p></div><button type="button" id="chartClose" class="icon-only" aria-label="Close chart settings">×</button></header>
+    <div class="chart-dialog-content">
+      <section class="chart-settings" aria-label="Chart settings">
+        <div class="chart-field"><label for="chartType">Type</label><select id="chartType"><option value="chartBar">Bar chart</option><option value="chartLine">Line chart</option><option value="chartPie">Pie chart</option><option value="diagramTimeline">Timeline</option></select></div>
+        <div class="chart-field"><label for="chartTitle">Title</label><input id="chartTitle" required maxlength="160"></div>
+        <fieldset id="chartAxes"><legend>Axes</legend><div class="chart-field-pair"><div class="chart-field"><label for="chartXAxis">Horizontal label</label><input id="chartXAxis" placeholder="Optional"></div><div class="chart-field"><label for="chartYAxis">Vertical label</label><input id="chartYAxis" placeholder="Value"></div></div><div class="chart-field-pair"><div class="chart-field"><label for="chartMinimum">Minimum</label><input id="chartMinimum" type="number" step="any" placeholder="Automatic"></div><div class="chart-field"><label for="chartMaximum">Maximum</label><input id="chartMaximum" type="number" step="any" placeholder="Automatic"></div></div><p class="chart-help">Leave both limits empty to fit your data automatically.</p></fieldset>
+        <div class="chart-data-head"><h3>Data</h3><button type="button" id="chartAddRow" class="library-button">＋ Add row</button></div>
+        <div class="chart-row-head" aria-hidden="true"><span id="chartLabelHeading">Label</span><span id="chartValueHeading">Value</span><span></span></div>
+        <div id="chartRows"></div>
+        <p id="chartError" class="chart-error" role="alert"></p>
+      </section>
+      <section class="chart-preview-panel" aria-label="Chart preview"><h3>Preview</h3><div id="chartPreview" class="chart-preview" aria-live="polite"></div><details><summary>Mermaid source</summary><pre><code id="chartCode"></code></pre></details><p class="chart-help">Preview requires an internet connection. Settings are saved as portable Markdown.</p></section>
+    </div>
+    <footer class="chart-dialog-footer"><button type="button" id="chartCancel" class="library-button">Cancel</button><button type="submit" id="chartSave" class="library-button primary">Insert into document</button></footer>
+  </form>
+</dialog>
 <input id="fileInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
 <input id="imageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" multiple hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -252,6 +271,8 @@
 <script src="src/storage.js"></script>
 <script src="src/editor.js"></script>
 <script src="src/view.js"></script>
+<script src="src/chart-model.js"></script>
+<script src="src/chart-editor.js"></script>
 <script src="src/export-styles.js"></script>
 <script src="src/desktop.js"></script>
 <script src="src/files.js"></script>

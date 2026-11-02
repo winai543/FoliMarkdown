@@ -15,13 +15,19 @@
       case "h1": case "h2": case "h3": heading(Number(action[1])); break;
       case "table": insertBlock("| Heading | Details |\n| --- | --- |\n| Item | Description |"); break;
       case "codeblock": insertBlock("```\nYour code\n```"); break;
-      case "chartBar": insertMermaid('xychart-beta\n    title "Monthly sales"\n    x-axis ["Jan", "Feb", "Mar", "Apr"]\n    y-axis "Sales" 0 --> 50\n    bar [18, 27, 34, 42]'); break;
-      case "chartLine": insertMermaid('xychart-beta\n    title "Monthly sales"\n    x-axis ["Jan", "Feb", "Mar", "Apr"]\n    y-axis "Sales" 0 --> 50\n    line [18, 27, 34, 42]'); break;
-      case "chartPie": insertMermaid('pie showData\n    title Sales share\n    "Product A" : 45\n    "Product B" : 30\n    "Product C" : 25'); break;
+      case "chartBar": openChartEditor("chartBar"); break;
+      case "chartLine": openChartEditor("chartLine"); break;
+      case "chartPie": openChartEditor("chartPie"); break;
       case "diagramFlow": insertMermaid('flowchart LR\n    A["Start"] --> B{"Check"}\n    B -- Yes --> C["Proceed"]\n    B -- No --> D["Revise"]\n    D --> B'); break;
       case "diagramSequence": insertMermaid('sequenceDiagram\n    participant U as User\n    participant S as System\n    U->>S: Request\n    S-->>U: Response'); break;
       case "diagramER": insertMermaid('erDiagram\n    USER ||--o{ ORDER : places\n    USER {\n        int id PK\n        string name\n    }\n    ORDER {\n        int id PK\n        int user_id FK\n    }'); break;
-      case "diagramTimeline": insertMermaid('timeline\n    title Project plan\n    2026 : Plan\n    2027 : Launch'); break;
+      case "diagramTimeline": openChartEditor("diagramTimeline"); break;
+      case "editChart": {
+        const block = editableChartBlocks().find(item => editor.selectionStart >= item.start && editor.selectionStart < item.end);
+        if (block?.settings) openChartEditor(null, block.index);
+        else toast("Place the cursor inside a supported chart or timeline block, or use Edit on its preview.");
+        break;
+      }
       case "pagebreak": insertBlock("<!-- pagebreak -->"); break;
       case "rule": insertBlock("---"); break;
       case "find":

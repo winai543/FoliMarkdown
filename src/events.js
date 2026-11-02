@@ -2,6 +2,11 @@
 // Shared classic-script scope: see README for load order and file:// support.
   document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => perform(button.dataset.action)));
   pages.addEventListener("click", event => {
+    const edit = event.target.closest(".diagram-edit");
+    if (edit) {
+      openChartEditor(null, Number(edit.closest(".mermaid-figure").dataset.diagramIndex));
+      return;
+    }
     const retry = event.target.closest(".diagram-retry");
     if (!retry) return;
     const figure = retry.closest(".mermaid-figure");
@@ -112,7 +117,7 @@
     }
   });
   document.addEventListener("keydown", event => {
-    if (document.querySelector(".desktop-prompt[open]")) return;
+    if (document.querySelector("dialog[open]")) return;
     if (event.key === "Escape" && !$("#libraryOverlay").hidden) { event.preventDefault(); closeLibrary(); return; }
     if (!$("#libraryOverlay").hidden) {
       if (event.key === "Tab") {
