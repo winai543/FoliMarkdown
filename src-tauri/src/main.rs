@@ -1,5 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod open_files;
+
+use std::{path::PathBuf, sync::Mutex};
+use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_opener::OpenerExt;
 
@@ -58,17 +62,83 @@ async fn open_external(app: tauri::AppHandle, url: String) -> Result<(), String>
         .map_err(|error| error.to_string())
 }
 
+#[derive(Default)]
+struct PendingFiles(Mutex<Vec<PathBuf>>);
+
+fn enqueue_files(app: &tauri::AppHandle, files: Vec<PathBuf>) {
+    let state = app.state::<PendingFiles>();
+    let mut pending = state.0.lock().unwrap();
+    for path in files {
+        if open_files::markdown_path(&path) && !pending.contains(&path) && pending.len() < 100 {
+            pending.push(path);
+        }
+    }
+    drop(pending);
+    let _ = app.emit("open-markdown-files", ());
+}
+
+// No caller-supplied paths: only files delivered by the OS can be read here.
+#[tauri::command]
+async fn take_open_files(app: tauri::AppHandle) -> Result<Vec<open_files::OpenedDocument>, String> {
+    let paths = std::mem::take(&mut *app.state::<PendingFiles>().0.lock().unwrap());
+    tauri::async_runtime::spawn_blocking(move || {
+        paths
+            .iter()
+            .map(|path| open_files::read_document(path))
+            .collect()
+    })
+    .await
+    .map_err(|error| error.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
+        .manage(PendingFiles::default())
+        .plugin(tauri_plugin_single_instance::init(|app, arguments, cwd| {
+            enqueue_files(
+                app,
+                open_files::argument_paths(
+                    arguments.into_iter().map(Into::into),
+                    std::path::Path::new(&cwd),
+                ),
+            );
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
+        .setup(|app| {
+            let cwd = std::env::current_dir()?;
+            enqueue_files(
+                app.handle(),
+                open_files::argument_paths(std::env::args_os(), &cwd),
+            );
+            Ok(())
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             save_export,
             confirm_action,
-            open_external
+            open_external,
+            take_open_files
         ])
-        .run(tauri::generate_context!())
-        .expect("Unable to start FoliMarkdown");
+        .build(tauri::generate_context!())
+        .expect("Unable to start FoliMarkdown")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = event {
+                enqueue_files(
+                    app,
+                    urls.into_iter()
+                        .filter_map(|url| url.to_file_path().ok())
+                        .collect(),
+                );
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app, event);
+        });
 }
 
 #[cfg(test)]

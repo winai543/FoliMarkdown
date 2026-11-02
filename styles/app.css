@@ -265,7 +265,7 @@
     .chart-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .chart-help { color: var(--muted); font-size: 11px; line-height: 1.6; }
     .chart-data-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-    .chart-row-head, .chart-data-row { display: grid; grid-template-columns: 1fr 1fr 28px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .chart-row-head, .chart-data-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
     .chart-row-head { font-size: 11px; color: var(--muted); }
     .chart-remove { border: 0; background: transparent; color: #8b4646; font-size: 20px; padding: 4px; border-radius: 4px; }
     .chart-remove:hover { background: #fff0f0; }
@@ -298,7 +298,7 @@
     .diagram-card-actions { display: flex; gap: 4px; }
     .diagram-card-actions button { padding: 3px 8px; }
     .diagram-card .chart-field { margin-bottom: 8px; }
-    .diagram-attribute-row { display: grid; grid-template-columns: 1fr 1fr 1fr 28px; gap: 6px; align-items: end; margin-bottom: 6px; }
+    .diagram-attribute-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 36px; gap: 6px; align-items: end; margin-bottom: 6px; }
     .diagram-attribute-row > button { padding: 8px 4px; margin-bottom: 8px; }
     .diagram-preview-panel .chart-preview { overflow: auto; }
     @media (max-width: 720px) { .diagram-dialog .chart-dialog-content { grid-template-columns: 1fr; overflow: auto; } .diagram-settings, .diagram-preview-panel { overflow: visible; } .diagram-card { padding: 10px; } .diagram-attribute-row { grid-template-columns: 1fr 1fr; } .diagram-attribute-row > button { justify-self: end; } }
@@ -374,3 +374,11 @@
     .document .markdown-absolute > :first-child { margin-top: 0; }
     .document .markdown-absolute > :last-child { margin-bottom: 0; }
     .document .markdown-absolute img { display: block; max-width: 100%; max-height: 120px; width: auto; height: auto; border-radius: 6px; }
+
+    .chart-dialog .editor-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; min-width: 32px; flex: none; padding: 0; line-height: 1; }
+    .editor-icon-button svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+    .chart-dialog input:not([type="checkbox"]):not([type="radio"]), .chart-dialog select { min-height: 36px; }
+    .chart-dialog select { appearance: none; padding-right: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2350635c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-size: 16px 16px; background-position: right 10px center; background-repeat: no-repeat; }
+    .chart-dialog .diagram-attribute-row > .editor-icon-button, .chart-dialog .chart-remove { width: 36px; height: 36px; min-width: 36px; }
+    .table-grid .editor-icon-button { width: 28px; height: 28px; min-width: 28px; }
+    .table-grid th:first-child { min-width: 128px; width: 128px; }

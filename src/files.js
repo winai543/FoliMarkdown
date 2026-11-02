@@ -66,10 +66,10 @@
     return `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(docName.value)}</title>${fontLink ? `<link rel="stylesheet" href="${escapeHtml(fontLink)}">` : ""}<style>${css}\n.pages{--page-width:${paperDimensions()[0]}px;--page-height:${paperDimensions()[1]}px;--page-margin:${({ normal: 76, narrow: 48,  wide: 100 })[layout.margin]}px}@media screen{body{height:auto;min-width:0;overflow:auto;background:#e9edf3}.pages{padding:24px 0}}</style></head><body>${printedPages.outerHTML}</body></html>`;
   }
   async function importFile(file, folder = null) {
-    if (!ready) return;
+    if (!ready) return false;
     const previousLayout = { ...layout };
     try {
-      if (!await flushDocument()) return;
+      if (!await flushDocument()) return false;
       const text = await file.text();
       const importedText = loadMarkdown(text);
       const images = folder ? await collectFolderImagePaths(importedText, folder.files, folder.base) : { mappings: {}, missing: [] };
@@ -79,10 +79,12 @@
       setView("split");
       toast(images.missing.length ? `Imported ${file.name}; ${images.missing.length} image path(s) not found or unsupported`
         : `Imported ${file.name} as a new document${!folder && localImageReferences(importedText).length ? ". Use File → Link image folder if local images are missing." : ""}`);
+      return true;
     } catch (error) {
       layout = previousLayout;
       syncLayoutControls();
       console.error("Import failed:", error);
       toast("Could not import the file");
+      return false;
     }
   }

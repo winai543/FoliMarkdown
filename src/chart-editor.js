@@ -41,7 +41,7 @@ function addChartRow(label = "", value = "") {
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "chart-remove";
-  remove.textContent = "×";
+  setEditorButtonIcon(remove, "×");
   remove.setAttribute("aria-label", "Remove row");
   remove.addEventListener("click", () => { row.remove(); scheduleChartPreview(); });
   row.append(labelInput, valueInput, remove);

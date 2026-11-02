@@ -118,6 +118,18 @@ The Resume template uses a 3:1 header and 2:1 experience/skills layout.
 
 Columns keep their layout in the preview, standalone HTML, PDF, print, and DOCX. Long rows continue across pages. Markdown export retains the column syntax, which requires a renderer supporting this extension. Templates use columns for resume sections, invoice addresses, meeting preparation, daily priorities, lesson materials, proposal approval, certificate signatures, and travel reminders.
 
+## Open Markdown files from the OS
+
+Desktop installers register FoliMarkdown as an editor for **`.md`** and **`.markdown`**. After installing the updated desktop build, use your OS's **Open With → FoliMarkdown**. To make double-click open FoliMarkdown by default:
+
+- **macOS:** copy the app to Applications, then select a Markdown file in Finder → **Get Info → Open with → FoliMarkdown → Change All**.
+- **Windows:** install the MSI or NSIS build, then right-click a Markdown file → **Open with → Choose another app → FoliMarkdown**, and select the option to always use it.
+- **Linux:** install the `.deb` package, then use your file manager's **Open With / Properties** to set FoliMarkdown as the default for Markdown. AppImage users need desktop integration before it appears in Open With.
+
+Files open both when launching the app and while it is already running. Multiple requests use the existing window. The current document is saved before each requested file is imported as a new document in Document Library; the original file on disk is preserved. Use **Save .md** to save a copy back to disk. Accepted files are UTF-8 Markdown under 10 MB. Local images can be supplied with **File → Link image folder** after opening.
+
+File associations apply to installed desktop builds; the browser demo does not register OS file types.
+
 ## Document templates
 
 Choose **Templates** in the top bar, **File → Templates**, or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.

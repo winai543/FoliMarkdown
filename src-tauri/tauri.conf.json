@@ -10,15 +10,17 @@
   },
   "app": {
     "withGlobalTauri": true,
-    "windows": [{
-      "label": "main",
-      "title": "FoliMarkdown",
-      "width": 1440,
-      "height": 960,
-      "minWidth": 760,
-      "minHeight": 600,
-      "dragDropEnabled": false
-    }],
+    "windows": [
+      {
+        "label": "main",
+        "title": "FoliMarkdown",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 760,
+        "minHeight": 600,
+        "dragDropEnabled": false
+      }
+    ],
     "security": {
       "csp": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' ipc: http://ipc.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-src 'none'"
     }
@@ -28,7 +30,28 @@
     "targets": "all",
     "category": "Productivity",
     "shortDescription": "Markdown writing with live paginated previews",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-    "macOS": { "minimumSystemVersion": "11.0" }
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "Markdown document",
+        "description": "Markdown document",
+        "mimeType": "text/markdown",
+        "role": "Editor",
+        "rank": "Alternate"
+      }
+    ]
   }
 }

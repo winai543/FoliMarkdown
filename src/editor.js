@@ -1,5 +1,23 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
+  function setEditorButtonIcon(button, symbol) {
+    const paths = {
+      '×': 'M6 6l12 12M18 6 6 18',
+      '↑': 'm6 10 6-6 6 6M12 4v16',
+      '↓': 'm6 14 6 6 6-6M12 4v16',
+      '←': 'm10 6-6 6 6 6M4 12h16',
+      '→': 'm14 6 6 6-6 6M4 12h16'
+    };
+    if (!paths[symbol]) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const path = document.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', paths[symbol]); svg.append(path);
+    button.replaceChildren(svg);
+    button.classList.add('editor-icon-button');
+  }
   function recordHistory(force = false) {
     const now = Date.now();
     const state = editor.value;

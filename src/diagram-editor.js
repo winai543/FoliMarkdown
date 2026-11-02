@@ -26,6 +26,7 @@ function diagramButton(text, label, click, disabled = false) {
   const button = document.createElement('button');
   button.type = 'button'; button.className = 'library-button'; button.textContent = text;
   button.title = label; button.setAttribute('aria-label', label); button.disabled = disabled;
+  setEditorButtonIcon(button, text);
   button.addEventListener('click', click);
   return button;
 }

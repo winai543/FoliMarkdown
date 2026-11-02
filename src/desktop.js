@@ -45,7 +45,7 @@ if (isDesktop) {
   });
 }
 
-async function initializeDesktop() {
+async function initializeDesktop(libraryStarted = Promise.resolve()) {
   if (!isDesktop) return;
   const appWindow = window.__TAURI__.window.getCurrentWindow();
   let closing = false;
@@ -64,4 +64,31 @@ async function initializeDesktop() {
       toast("Could not finish saving. Download a backup before closing.");
     } finally { closing = false; }
   });
+  if (window.__TAURI__.event?.listen) {
+    const pending = [];
+    let work = Promise.resolve();
+    const drain = () => {
+      work = work.then(async () => {
+        await libraryStarted;
+        if (!ready || !await flushDocument()) return;
+        pending.push(...await window.__TAURI__.core.invoke("take_open_files"));
+        while (pending.length) {
+          const file = pending[0];
+          if (file.error) {
+            toast(`Could not open ${file.name}: ${file.error}`);
+            pending.shift();
+            continue;
+          }
+          if (!await importFile({ name: file.name, text: async () => file.text })) return;
+          pending.shift();
+        }
+      }).catch(error => {
+        console.error("Could not open OS files:", error);
+        toast("Could not open the requested Markdown file. Try Open With again.");
+      });
+      return work;
+    };
+    await window.__TAURI__.event.listen("open-markdown-files", drain);
+    await drain();
+  }
 }

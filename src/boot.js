@@ -4,8 +4,8 @@ initializeChartEditor();
 initializeDiagramEditor();
 initializeTableEditor();
 initializeDocumentTemplates();
-startLibrary();
-initializeDesktop().catch(error => {
+const libraryStarted = startLibrary();
+initializeDesktop(libraryStarted).catch(error => {
   console.error("Desktop setup failed:", error);
   toast("Could not enable save-on-close. Download a backup before closing.");
 });
