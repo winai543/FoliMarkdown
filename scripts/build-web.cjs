@@ -10,4 +10,5 @@ fs.mkdirSync(output);
 for (const name of ['index.html', 'src', 'styles', 'vendor']) {
   fs.cpSync(path.join(root, name), path.join(output, name), { recursive: true });
 }
-console.log('Prepared desktop frontend in dist/');
+fs.cpSync(path.join(root, 'docs/images'), path.join(output, 'docs/images'), { recursive: true });
+console.log('Prepared public frontend in dist/');

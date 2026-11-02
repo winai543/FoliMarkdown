@@ -1,12 +1,12 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
-  function newRecord(name, text = "", settings = DEFAULT_LAYOUT) {
-    return { id: crypto.randomUUID(), name, text, layout: { ...DEFAULT_LAYOUT, ...settings }, updatedAt: Date.now(), deletedAt: null };
+  function newRecord(name, text = "", settings = DEFAULT_LAYOUT, imagePaths = {}) {
+    return { id: crypto.randomUUID(), name, text, imagePaths: { ...imagePaths }, layout: { ...DEFAULT_LAYOUT, ...settings }, updatedAt: Date.now(), deletedAt: null };
   }
   function snapshot() {
     return { ...documents.find(item => item.id === activeId),
       id: activeId, name: docName.value.trim() || "Untitled", text: editor.value,
-      layout: { ...layout }, updatedAt: Date.now(), deletedAt: null };
+      imagePaths: { ...documentImagePaths }, layout: { ...layout }, updatedAt: Date.now(), deletedAt: null };
   }
   function draftSnapshot() {
     if (!activeId || !ready) return;
@@ -55,12 +55,14 @@
     // Copies may share the same asset; retain images referenced by any remaining document or draft.
     const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
     const retained = new Set();
-    for (const text of [...documents.map(item => item.text), draft?.id !== id ? draft?.text : null]) {
-      if (typeof text !== "string") continue;
-      for (const match of text.matchAll(ASSET_IMAGE)) retained.add(match[2]);
+    const recordAssetIds = record => new Set([
+      ...[...(record?.text || "").matchAll(ASSET_IMAGE)].map(match => match[2]),
+      ...Object.values(record?.imagePaths || {})
+    ]);
+    for (const record of [...documents, draft?.id !== id ? draft : null]) {
+      for (const assetId of recordAssetIds(record)) retained.add(assetId);
     }
-    for (const match of (removed?.text || "").matchAll(ASSET_IMAGE)) {
-      const assetId = match[2];
+    for (const assetId of recordAssetIds(removed)) {
       if (retained.has(assetId)) continue;
       try {
         if (database) await dbRequest("delete", assetId, "assets");
@@ -81,7 +83,8 @@
       try {
         await storeRecord(record);
         if (activeId === record.id && snapshot().name === record.name && editor.value === record.text
-            && JSON.stringify(layout) === JSON.stringify(record.layout)) {
+            && JSON.stringify(layout) === JSON.stringify(record.layout)
+            && JSON.stringify(documentImagePaths) === JSON.stringify(record.imagePaths)) {
           const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
           if (draft?.id === record.id && draft.updatedAt <= record.updatedAt) localStorage.removeItem(DRAFT_KEY);
           $("#saveStatus").textContent = "All changes saved";

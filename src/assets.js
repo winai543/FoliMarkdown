@@ -32,7 +32,7 @@
     return output + text.slice(cursor);
   }
   function portableMarkdown(text) {
-    return text.replace(ASSET_IMAGE, (match, prefix, id) => {
+    return portablePathImages(text).replace(ASSET_IMAGE, (match, prefix, id) => {
       const data = imageAssets.get(id);
       if (!data) throw new Error(`Missing image asset: ${id}`);
       return prefix + data;

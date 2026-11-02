@@ -141,6 +141,16 @@
     pages.replaceChildren();
     const source = document.createElement("div");
     source.innerHTML = lastRenderedHtml;
+    // Reserve known image dimensions before measuring the pages. Recreated image
+    // elements may report incomplete even when their URL is already cached.
+    source.querySelectorAll("img").forEach(image => {
+      image.loading = "eager";
+      const size = previewImageSizes.get(image.src);
+      if (size) {
+        image.width = size.width;
+        image.height = size.height;
+      }
+    });
     const figures = [...source.querySelectorAll(".mermaid-figure")];
     const editableCharts = new Set(editableChartBlocks().filter(block => block.settings).map(block => block.index));
     figures.forEach(figure => {
@@ -208,10 +218,16 @@
     $("#pageCount").textContent = `${total.toLocaleString("en-US")} pages`;
     previewScroll.scrollTop = Math.min(scrollY, previewScroll.scrollHeight - previewScroll.clientHeight);
     pages.querySelectorAll("img").forEach(image => {
-      if (!image.complete) image.addEventListener("load", () => {
+      const rememberSize = () => {
+        if (!image.isConnected || !image.naturalWidth || !image.naturalHeight) return;
+        const previous = previewImageSizes.get(image.src);
+        if (previous?.width === image.naturalWidth && previous?.height === image.naturalHeight) return;
+        previewImageSizes.set(image.src, { width: image.naturalWidth, height: image.naturalHeight });
         clearTimeout(imageRelayoutTimer);
         imageRelayoutTimer = setTimeout(paginate, 100);
-      }, { once: true });
+      };
+      if (image.complete) rememberSize();
+      else image.addEventListener("load", rememberSize, { once: true });
     });
     queueDiagrams(figures);
     refreshPreviewHighlights();

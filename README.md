@@ -36,7 +36,7 @@ npm run desktop:build
 npm run desktop:build -- --target universal-apple-darwin --bundles app,dmg
 ```
 
-The desktop build copies only `index.html`, `src/`, `styles/`, and `vendor/` to `dist/`. It does not change the browser version: you can still open the root `index.html` without installing dependencies. In development, edit the root source files and restart `npm run desktop:dev` to refresh the copied assets. Build output is under `src-tauri/target/release/bundle/` (or `src-tauri/target/universal-apple-darwin/release/bundle/` for universal macOS).
+The desktop build copies `index.html`, `src/`, `styles/`, `vendor/`, and the public `docs/images/` screenshots to `dist/`. It does not change the browser version: you can still open the root `index.html` without installing dependencies. In development, edit the root source files and restart `npm run desktop:dev` to refresh the copied assets. Build output is under `src-tauri/target/release/bundle/` (or `src-tauri/target/universal-apple-darwin/release/bundle/` for universal macOS).
 
 The **Desktop builds** GitHub Actions workflow runs frontend tests, then builds a universal macOS `.dmg`, Linux x64 `.deb`/`.AppImage`, and Windows x64 `.exe`/`.msi`. Download these from each successful workflow run's **Artifacts** section. The workflow also runs manually through **Actions → Desktop builds → Run workflow**. Builds are unsigned; public signed/notarized distribution requires your platform signing credentials. The workflow builds installers and does not publish a release automatically.
 
@@ -63,11 +63,59 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 
 ## Chart and timeline settings
 
-Choose **Chart → Bar chart / Line chart / Pie chart**, or **Diagram → Timeline**. Fill in the title and rows, preview the result, and click **Insert into document**. Use **Add row** or **×** to change the data. Bar/line charts support optional axis labels and a manual range; leave both limits blank for automatic scaling.
+Create a chart with the settings dialog—no Mermaid syntax is required. Try it in the **[live demo](https://winai543.github.io/FoliMarkdown/)**.
 
-To update an existing chart, click **Edit chart** below its preview, or place the cursor in its fenced block and choose **Chart → Edit chart**. Saving updates that block and supports Undo/Redo. Closing the form or choosing Cancel leaves the document unchanged. Forms can also edit the original built-in examples; diagrams with additional Mermaid commands stay in the source editor to preserve their syntax.
+1. Place the cursor where you want the chart in your document.
+2. Open **Chart** and choose **Bar chart**, **Line chart**, or **Pie chart**. For a timeline, choose **Diagram → Timeline**.
+3. Enter a **Title**, then fill in the **Data** rows. Use **＋ Add row** to add an item or **×** beside a row to remove it.
+4. For bar and line charts, set optional horizontal/vertical axis labels. Leave **Minimum** and **Maximum** blank for automatic scaling, or enter both limits. The minimum must be lower than the maximum, and the range must include all values.
+5. Check the live **Preview**, then click **Insert into document**. The app inserts a standard Mermaid block and updates the paginated preview.
 
-![Chart settings form with editable data rows and a live bar chart preview](docs/images/chart-settings.png)
+For example, to compare monthly sales, choose **Bar chart**, set the title to **Monthly sales**, and enter **Jan: 18**, **Feb: 27**, **Mar: 34**, and **Apr: 42** as label/value rows. Set the vertical label to **Sales** and the range to **0–50** to keep a zero baseline.
+
+![Bar chart dialog with title, axis range, editable data rows, and a dark teal preview](docs/images/chart-settings.png)
+
+Choose a chart type to suit your data:
+
+- **Bar chart:** compare categories, such as sales by month or expenses by department. Each row contains a label and a numeric value.
+- **Line chart:** show a trend across ordered labels, such as Jan through Apr. Rows appear in the order you enter them.
+- **Pie chart:** show parts of a whole, such as **Product A: 45**, **Product B: 30**, and **Product C: 25**. Values must be non-negative, and at least one must be greater than zero.
+- **Timeline:** describe milestones with **Period** and **Event** fields, such as **2026: Plan** and **2027: Launch**. These fields accept text rather than numeric values.
+
+<details>
+<summary>View line chart, pie chart, and timeline dialogs</summary>
+
+**Line chart**
+
+![Line chart settings with a dark teal sales trend and a 0–50 axis range](docs/images/chart-line-settings.png)
+
+**Pie chart**
+
+![Pie chart settings with product labels, values, and a live sales-share preview](docs/images/chart-pie-settings.png)
+
+**Timeline**
+
+![Timeline settings with editable periods and events alongside a project-plan preview](docs/images/timeline-settings.png)
+
+</details>
+
+To update an existing chart, click **Edit chart** below its preview, or place the cursor in its fenced block and choose **Chart → Edit chart**. Adjust the fields and click **Save changes**. Saving updates that block and supports Undo/Redo; **Cancel**, **×**, or **Escape** closes the dialog without changing the document. The **Type** selector also lets you switch chart types before saving.
+
+Expand **Mermaid source** in the dialog to inspect the generated syntax. The chart stays in your Markdown, so it remains portable through Markdown export/import. The preview needs an internet connection to load Mermaid; the form can still save settings when the preview is unavailable. Existing built-in chart examples can be edited with the form, while diagrams with additional Mermaid commands remain editable in the source editor.
+
+## Images referenced by path
+
+Relative image links such as `![Screenshot](docs/images/folimarkdown-ui.png)`, `![Photo](./images/photo.png)`, and `![Logo](../images/logo.png)` now render in the preview. Images served alongside the editor resolve relative to its URL; the bundled demo screenshots are available on GitHub Pages and in the desktop app.
+
+For Markdown and images on your computer:
+
+1. Choose **File → Open folder** and select the project folder containing the Markdown file and its images.
+2. If the folder contains several Markdown files, choose the document to open. Image paths resolve from that document's directory, including `../` paths within the selected folder.
+3. For a document already open through **Open file**, choose **File → Link image folder** and select the folder that its image paths start from. For `docs/images/photo.png`, select the folder containing `docs/`.
+
+The editor keeps the original paths in your Markdown and stores the matched images in its document library, so they survive reloads and document duplication. Markdown export embeds linked images as data URLs; HTML, DOCX, and PDF use those stored images too. Local paths with spaces or percent-encoded spaces and reference-style Markdown images are supported. Folder linking supports PNG, JPEG, GIF, WebP, and AVIF, with the same 8 MB per image and 16 MB total limit as image insertion. Unmatched or unsupported paths are reported after import/linking.
+
+Opening a Markdown file alone does not grant a browser access to neighboring files. Use **Open folder** or **Link image folder** when those local images are missing. Unlinked relative images can still render when they exist beside the editor, but HTML export keeps their absolute URL and they still depend on the original files or server. Link the image folder to embed them for a portable export.
 
 ## Export details
 
@@ -116,6 +164,7 @@ src/layout.js              Paper settings, pagination, and visual readiness
 src/search.js              Search, highlights, outline, and replace
 src/storage.js             IndexedDB, records, autosave, and draft handling
 src/assets.js              Image storage, insertion, and portable Markdown conversion
+src/image-paths.js         Relative image resolution and linked folder imports
 src/editor.js              Editing commands, selection, and undo history
 src/view.js                View switching, navigation, and notifications
 src/export-styles.js       Generated CSS fallback for standalone file:// exports

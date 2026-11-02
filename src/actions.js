@@ -39,6 +39,10 @@
       case "redo": if (historyIndex < history.length - 1) { historyIndex++; editor.value = history[historyIndex]; lastHistoryAt = 0; render(); refreshEditorHeight(); scheduleSave(); editor.focus(); } break;
       case "library": openLibrary(); break;
       case "new": libraryAction("new"); break;
+      case "openFolder": case "linkImageFolder":
+        folderPickerMode = action === "openFolder" ? "open" : "link";
+        $("#folderInput").click();
+        break;
       case "open": $("#fileInput").click(); break;
       case "download":
         try {

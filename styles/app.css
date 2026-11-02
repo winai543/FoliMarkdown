@@ -243,7 +243,7 @@
     .desktop-prompt::backdrop { background: #15233b99; }
     .desktop-prompt h2 { margin: 0 0 18px; font-size: 18px; }
     .desktop-prompt label { display: block; margin-bottom: 8px; }
-    .desktop-prompt input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; }
+    .desktop-prompt input, .desktop-prompt select { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; }
     .desktop-prompt form > div { display: flex; justify-content: end; gap: 8px; margin-top: 20px; }
     .desktop-prompt button { border: 1px solid var(--line); border-radius: 4px; padding: 7px 14px; background: #fff; color: var(--ink); }
     .desktop-prompt button[value="save"] { background: var(--accent); color: #fff; }

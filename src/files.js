@@ -45,6 +45,8 @@
   }
   function exportHtml() {
     const printedPages = pages.cloneNode(true);
+    // Make unlinked app-relative URLs absolute so downloads resolve from any folder.
+    printedPages.querySelectorAll("img").forEach(image => image.setAttribute("src", image.src));
     printedPages.querySelectorAll(".diagram-edit").forEach(button => button.remove());
     let css;
     try {
@@ -63,18 +65,20 @@
     const fontLink = fontStylesheetUrl(layout.font);
     return `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(docName.value)}</title>${fontLink ? `<link rel="stylesheet" href="${escapeHtml(fontLink)}">` : ""}<style>${css}\n.pages{--page-width:${paperDimensions()[0]}px;--page-height:${paperDimensions()[1]}px;--page-margin:${({ normal: 76, narrow: 48,  wide: 100 })[layout.margin]}px}@media screen{body{height:auto;min-width:0;overflow:auto;background:#e9edf3}.pages{padding:24px 0}}</style></head><body>${printedPages.outerHTML}</body></html>`;
   }
-  async function importFile(file) {
+  async function importFile(file, folder = null) {
     if (!ready) return;
     const previousLayout = { ...layout };
     try {
       if (!await flushDocument()) return;
       const text = await file.text();
       const importedText = loadMarkdown(text);
-      const record = newRecord(file.name.replace(/\.(md|markdown|txt)$/i, ""), await compactImages(importedText), layout);
+      const images = folder ? await collectFolderImagePaths(importedText, folder.files, folder.base) : { mappings: {}, missing: [] };
+      const record = newRecord(file.name.replace(/\.(md|markdown|txt)$/i, ""), await compactImages(importedText), layout, images.mappings);
       await storeRecord(record);
       displayDocument(record);
       setView("split");
-      toast(`Imported ${file.name} as a new document`);
+      toast(images.missing.length ? `Imported ${file.name}; ${images.missing.length} image path(s) not found or unsupported`
+        : `Imported ${file.name} as a new document${!folder && localImageReferences(importedText).length ? ". Use File → Link image folder if local images are missing." : ""}`);
     } catch (error) {
       layout = previousLayout;
       syncLayoutControls();

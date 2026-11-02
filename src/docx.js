@@ -117,6 +117,7 @@
     };
     const imageRun = async (href, alt) => {
       try {
+        href = plainText(safeUrl(href, true));
         if (/^asset:[0-9a-f-]{36}$/i.test(href)) {
           href = imageAssets.get(href.slice(6));
           if (!href) throw new Error("Missing image asset");

@@ -18,6 +18,7 @@
     try { localStorage.setItem(ACTIVE_KEY, record.id); } catch {}
     docName.value = record.name;
     editor.value = record.text;
+    documentImagePaths = { ...(record.imagePaths || {}) };
     layout = { ...DEFAULT_LAYOUT, ...record.layout };
     if (layout.footer === "Markdown Word" || layout.footer === "\u0e2b\u0e19\u0e49\u0e32\u0e40\u0e02\u0e35\u0e22\u0e19") layout.footer = DEFAULT_LAYOUT.footer;
     syncLayoutControls();
@@ -114,7 +115,7 @@
         if (id === activeId) { docName.value = renamed.name; render(); }
         renderLibrary();
       } else if (action === "duplicate") {
-        const copy = newRecord(`${item.name} (copy)`, item.text, item.layout);
+        const copy = newRecord(`${item.name} (copy)`, item.text, item.layout, item.imagePaths);
         await storeRecord(copy);
         renderLibrary();
         toast("Copy created");
@@ -172,7 +173,7 @@
         const stored = documents.find(item => item.id === draft.id);
         if (stored && !stored.deletedAt && draft.updatedAt >= stored.updatedAt) {
           await storeRecord({ ...stored, name: draft.name, text: draft.text,
-            layout: { ...DEFAULT_LAYOUT, ...draft.layout }, updatedAt: draft.updatedAt });
+            layout: { ...DEFAULT_LAYOUT, ...draft.layout }, imagePaths: draft.imagePaths || stored.imagePaths || {}, updatedAt: draft.updatedAt });
           toast("Latest draft restored");
         }
       }

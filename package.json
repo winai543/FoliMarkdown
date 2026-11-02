@@ -9,7 +9,7 @@
     "desktop:build": "tauri build",
     "build:web": "node scripts/build-web.cjs",
     "check": "node scripts/sync-export-css.cjs --check && node tests/export-css.cjs && node tests/chart-model.cjs && node tests/desktop.cjs",
-    "test": "npm run check && node tests/smoke.cjs && node tests/chart-editor.cjs"
+    "test": "npm run check && node tests/smoke.cjs && node tests/chart-editor.cjs && node tests/image-paths.cjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

@@ -10,8 +10,15 @@
       return data && /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[a-z0-9+/]+={0,2}$/i.test(data) ? data : "#";
     }
     if (image && /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[a-z0-9+/]+={0,2}$/i.test(url)) return url;
-    if (/^(https?:\/\/|mailto:)/i.test(url) || (/^(\/(?!\/)|\.\/|\.\.\/|#)/.test(url) && !image)) return escapeHtml(url);
-    if (image && /^https?:\/\//i.test(url)) return escapeHtml(url);
+    if (/^https?:\/\//i.test(url) || (!image && (/^mailto:/i.test(url) || /^(\/(?!\/)|\.\/|\.\.\/|#)/.test(url)))) return escapeHtml(url);
+    if (image && localImagePath(url)) {
+      const stored = mappedImageData(url);
+      if (stored) return escapeHtml(stored);
+      try {
+        const resolved = new URL(url.replace(/\\/g, "/"), document.baseURI);
+        if (["http:", "https:", "file:"].includes(resolved.protocol)) return escapeHtml(resolved.href);
+      } catch { /* Invalid paths stay blocked. */ }
+    }
     return "#";
   }
   // The bundled Marked parser handles GFM nesting, tables, autolinks and task items.

@@ -146,6 +146,10 @@
     await importFile(file);
     event.target.value = "";
   });
+  $("#folderInput").addEventListener("change", async event => {
+    if (event.target.files?.length) await handleImageFolder([...event.target.files], folderPickerMode);
+    event.target.value = "";
+  });
   $("#imageInput").addEventListener("change", async event => {
     if (event.target.files?.length) await insertImages(event.target.files);
     event.target.value = "";

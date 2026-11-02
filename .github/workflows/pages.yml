@@ -8,6 +8,7 @@ on:
       - 'src/**'
       - 'styles/**'
       - 'vendor/**'
+      - 'docs/images/**'
       - scripts/build-web.cjs
       - scripts/sync-export-css.cjs
       - .github/workflows/pages.yml

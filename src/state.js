@@ -70,6 +70,7 @@ Select text and use the toolbar above, or type Markdown directly.
   let pendingLayout = false;
   let lastRenderedHtml = "";
   let imageRelayoutTimer;
+  const previewImageSizes = new Map();
   let mermaidModulePromise;
   let mermaidLoadAttempt = 0;
   let diagramWork = Promise.resolve();

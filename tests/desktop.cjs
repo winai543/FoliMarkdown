@@ -13,7 +13,7 @@ assert.equal(config.app.withGlobalTauri, true);
 assert.equal(config.app.windows[0].dragDropEnabled, false);
 for (const icon of config.bundle.icon) assert.ok(fs.existsSync(path.join(root, 'src-tauri', icon)));
 execFileSync(process.execPath, [path.join(root, 'scripts/build-web.cjs')], { stdio: 'inherit' });
-assert.deepEqual(fs.readdirSync(path.join(root, 'dist')).sort(), ['index.html', 'src', 'styles', 'vendor']);
+assert.deepEqual(fs.readdirSync(path.join(root, 'dist')).sort(), ['docs', 'index.html', 'src', 'styles', 'vendor']);
 for (const file of [...scripts, 'index.html', 'styles/app.css']) {
   assert.equal(read('dist/' + file), read(file));
 }

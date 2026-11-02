@@ -125,6 +125,7 @@ const root = path.resolve(__dirname, '..');
     await page.evaluate(() => setView('preview'));
     assert.ok(await page.$eval('.preview-side', element => element.getBoundingClientRect().width > 0));
     const desktopPage = await browser.newPage();
+    await desktopPage.setViewport({ width: 1440, height: 1000 });
     desktopPage.on('pageerror', error => errors.push(error.message));
     await desktopPage.evaluateOnNewDocument(() => {
       window.nativeCalls = [];
