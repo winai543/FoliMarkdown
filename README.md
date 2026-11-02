@@ -2,6 +2,8 @@
 
 A Markdown document editor with paginated previews, document storage, and exports. Open `index.html` in a browser; no build step or server is required. All local CSS and JavaScript files must remain alongside `index.html` in their folders.
 
+![FoliMarkdown desktop interface showing the formatting toolbar, document outline, Markdown editor, and live paginated preview](docs/images/folimarkdown-ui.png)
+
 ## Features
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
