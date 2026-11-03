@@ -147,7 +147,8 @@
   }
   function makePage(number) {
     const page = document.createElement("article");
-    page.className = layout.documentKind === "certificate" ? "page certificate-page" : "page";
+    page.className = layout.documentKind === "certificate" ? "page certificate-page"
+      : layout.documentKind === "dashboard" ? "page dashboard-page" : "page";
     page.setAttribute("aria-label", `Page ${number}`);
     page.innerHTML = '<div class="page-background" aria-hidden="true"></div><div class="page-header" title="Double-click to edit header"></div><div class="page-body document"></div><div class="page-footer" title="Double-click to edit footer"><span></span><span></span></div>';
     pages.append(page);
@@ -156,6 +157,44 @@
   function fits(body) {
     const last = [...body.children].findLast(child => !child.classList.contains("markdown-absolute"));
     return !last || last.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom + 1;
+  }
+  function isHeading(element) {
+    return /^H[1-6]$/.test(element?.tagName || "");
+  }
+  function needsTextSplit(element) {
+    const body = element.closest(".page-body");
+    if (!body) return false;
+    const bodyStyle = getComputedStyle(body);
+    const blockStyle = getComputedStyle(element);
+    const room = body.clientHeight - parseFloat(bodyStyle.paddingTop) - parseFloat(bodyStyle.paddingBottom);
+    const height = element.getBoundingClientRect().height + parseFloat(blockStyle.marginTop) + parseFloat(blockStyle.marginBottom);
+    return height > room - 2;
+  }
+  function lockTableColumns(table) {
+    if (table.tagName !== "TABLE" || table.querySelector(":scope > colgroup")) return;
+    const cells = [...(table.tHead?.rows[0]?.cells || table.tBodies[0]?.rows[0]?.cells || [])];
+    if (!cells.length || cells.some(cell => cell.colSpan !== 1)) return;
+    const widths = cells.map(cell => cell.getBoundingClientRect().width);
+    const total = widths.reduce((sum, width) => sum + width, 0);
+    if (!total || widths.some(width => !width)) return;
+    const columns = document.createElement("colgroup");
+    widths.forEach(width => {
+      const column = document.createElement("col");
+      column.style.width = `${width / total * 100}%`;
+      columns.append(column);
+    });
+    table.insertBefore(columns, table.tHead || table.tBodies[0]);
+    table.style.tableLayout = "fixed";
+  }
+  function needsTableRowSplit(table) {
+    const body = table.closest(".page-body");
+    const row = table.tBodies[0]?.rows[0];
+    if (!body || !row) return false;
+    const bodyStyle = getComputedStyle(body);
+    const tableStyle = getComputedStyle(table);
+    const room = body.clientHeight - parseFloat(bodyStyle.paddingTop) - parseFloat(bodyStyle.paddingBottom);
+    const header = (table.caption?.getBoundingClientRect().height || 0) + (table.tHead?.getBoundingClientRect().height || 0);
+    return header + row.getBoundingClientRect().height + parseFloat(tableStyle.marginTop) + parseFloat(tableStyle.marginBottom) > room - 2;
   }
   function splitTextBlock(block, body, fitsWithin = () => fits(body)) {
     const nodes = [];
@@ -206,6 +245,8 @@
     let firstHolder = first, restHolder = rest;
     if (table) {
       if (block.caption) { first.append(block.caption.cloneNode(true)); rest.append(block.caption.cloneNode(true)); }
+      const columns = block.querySelector(":scope > colgroup");
+      if (columns) { first.append(columns.cloneNode(true)); rest.append(columns.cloneNode(true)); }
       if (block.tHead) { first.append(block.tHead.cloneNode(true)); rest.append(block.tHead.cloneNode(true)); }
       firstHolder = first.createTBody();
       restHolder = rest.createTBody();
@@ -217,9 +258,80 @@
       if (!fitsWithin()) { firstHolder.lastChild.remove(); break; }
       splitAt++;
     }
+    if (!table && isHeading(children[splitAt - 1])) {
+      firstHolder.lastChild.remove();
+      splitAt--;
+    }
     if (!splitAt || splitAt === children.length) { first.remove(); return null; }
     children.slice(splitAt).forEach(child => restHolder.append(child.cloneNode(true)));
     if (block.tagName === "OL") rest.start = (Number(block.getAttribute("start")) || 1) + splitAt;
+    rest.removeAttribute("id");
+    return rest;
+  }
+  function splitTallTableRow(block, body, fitsWithin = () => fits(body)) {
+    const sourceRow = block.tBodies[0]?.rows[0];
+    if (!sourceRow || [...sourceRow.cells].some(cell => cell.colSpan !== 1 || cell.rowSpan !== 1)) return null;
+    const shell = () => {
+      const table = block.cloneNode(false);
+      for (const child of block.children) {
+        if (child.tagName === "TBODY") break;
+        table.append(child.cloneNode(true));
+      }
+      return [table, table.createTBody()];
+    };
+    const [first, firstBody] = shell();
+    const [rest, restBody] = shell();
+    const firstRow = sourceRow.cloneNode(false), restRow = sourceRow.cloneNode(false);
+    const firstCells = [], restCells = [];
+    [...sourceRow.cells].forEach(cell => {
+      const firstCell = cell.cloneNode(false), restCell = cell.cloneNode(false);
+      firstRow.append(firstCell); restRow.append(restCell);
+      firstCells.push(firstCell); restCells.push(restCell);
+    });
+    firstBody.append(firstRow);
+    restBody.append(restRow);
+    [...block.tBodies[0].rows].slice(1).forEach(row => restBody.append(row.cloneNode(true)));
+    body.append(first);
+    if (!fitsWithin()) { first.remove(); return null; }
+    let progressed = false, remaining = false;
+    [...sourceRow.cells].forEach((cell, index) => {
+      const current = firstCells[index], next = restCells[index];
+      current.innerHTML = cell.innerHTML;
+      if (fitsWithin()) { progressed ||= !!cell.textContent.trim() || !!cell.children.length; return; }
+      current.replaceChildren();
+      const nodes = [];
+      const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) if (walker.currentNode.length) nodes.push(walker.currentNode);
+      const length = nodes.reduce((sum, node) => sum + node.length, 0);
+      const positionAt = count => {
+        for (const node of nodes) {
+          if (count <= node.length) return [node, count];
+          count -= node.length;
+        }
+        return [nodes.at(-1), nodes.at(-1).length];
+      };
+      const part = (from, to) => {
+        const range = document.createRange();
+        if (!from) range.setStart(cell, 0);
+        else { const [node, offset] = positionAt(from); range.setStart(node, offset); }
+        if (to === length) range.setEnd(cell, cell.childNodes.length);
+        else { const [node, offset] = positionAt(to); range.setEnd(node, offset); }
+        return range.cloneContents();
+      };
+      let low = 1, high = length - 1, best = 0;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        current.replaceChildren(part(0, mid));
+        if (fitsWithin()) { best = mid; low = mid + 1; }
+        else high = mid - 1;
+      }
+      current.replaceChildren();
+      if (best) { current.append(part(0, best)); progressed = true; }
+      if (length) next.append(part(best, length));
+      else next.innerHTML = cell.innerHTML;
+      remaining = true;
+    });
+    if (!progressed || !remaining) { first.remove(); return null; }
     rest.removeAttribute("id");
     return rest;
   }
@@ -229,7 +341,6 @@
       first.append(column.cloneNode(false)); rest.append(column.cloneNode(false));
     }
     body.append(first);
-    let moved = false, remaining = false;
     [...block.children].forEach((column, index) => {
       const target = first.children[index], remainder = rest.children[index];
       const children = [...column.children];
@@ -237,20 +348,36 @@
         const child = children.shift().cloneNode(true);
         target.append(child);
         if (child.classList.contains('markdown-absolute')) continue;
-        if (fitsWithin()) { moved = true; continue; }
+        if (fitsWithin()) continue;
+        if (child.tagName === 'TABLE') {
+          lockTableColumns(child);
+          if (fitsWithin()) continue;
+        }
+        const splitText = needsTextSplit(child);
+        const splitTableRow = child.tagName === 'TABLE' && needsTableRowSplit(child);
         child.remove();
-        const tail = child.classList.contains('markdown-row') ? splitColumnRow(child, target, fitsWithin)
-          : child.classList.contains('markdown-align') || ['TABLE', 'UL', 'OL'].includes(child.tagName) ? splitRows(child, target, fitsWithin)
-          : child.classList.contains('mermaid-figure') ? null : splitTextBlock(child, target, fitsWithin);
-        if (tail) { moved = true; remainder.append(tail); }
-        else remainder.append(child);
+        const tail = splitPageBlock(child, target, fitsWithin, splitText, splitTableRow);
+        if (tail) remainder.append(tail);
+        else {
+          if (isHeading(target.lastElementChild)) remainder.append(target.lastElementChild);
+          remainder.append(child);
+        }
         remainder.append(...children.map(element => element.cloneNode(true)));
-        remaining = true;
         break;
       }
     });
+    const moved = [...first.children].some(column => [...column.children].some(child => !child.classList.contains('markdown-absolute')));
+    const remaining = [...rest.children].some(column => [...column.children].some(child => !child.classList.contains('markdown-absolute')));
     if (!moved || !remaining) { first.remove(); return null; }
     return rest;
+  }
+  function splitPageBlock(block, body, fitsWithin, splitText, splitTableRow) {
+    if (block.classList.contains('markdown-row')) return splitColumnRow(block, body, fitsWithin);
+    if (block.classList.contains('mermaid-figure')) return null;
+    if (block.classList.contains('markdown-align') || ['TABLE', 'UL', 'OL', 'BLOCKQUOTE'].includes(block.tagName)) {
+      return splitRows(block, body, fitsWithin) || (splitTableRow ? splitTallTableRow(block, body, fitsWithin) : null);
+    }
+    return splitText ? splitTextBlock(block, body, fitsWithin) : null;
   }
   function paginate() {
     applyPaperSettings();
@@ -304,9 +431,15 @@
       }
       body.append(block);
       if (block.classList.contains("markdown-absolute") || fits(body)) continue;
+      if (block.tagName === "TABLE") {
+        lockTableColumns(block);
+        if (fits(body)) continue;
+      }
+      const splitText = needsTextSplit(block);
+      const splitTableRow = block.tagName === "TABLE" && needsTableRowSplit(block);
       block.remove();
-      const splittable = block.classList.contains("markdown-align") || ["UL", "OL", "TABLE"].includes(block.tagName);
-      const trySplit = () => block.classList.contains("markdown-row") ? splitColumnRow(block, body) : block.classList.contains("mermaid-figure") ? null : (splittable ? splitRows(block, body) : splitTextBlock(block, body));
+      const splittable = block.classList.contains("markdown-align") || ["UL", "OL", "TABLE", "BLOCKQUOTE"].includes(block.tagName);
+      const trySplit = () => splitPageBlock(block, body, () => fits(body), splitText, splitTableRow);
       if ([...body.children].some(child => !child.classList.contains("markdown-absolute"))) {
         const remainder = trySplit();
         if (remainder) {
@@ -315,12 +448,21 @@
           queue.unshift(remainder);
           continue;
         }
+        const previous = body.lastElementChild;
+        if (isHeading(previous) && [...body.children].some(child => child !== previous && !child.classList.contains("markdown-absolute"))) {
+          previous.remove();
+          page = makePage(pages.children.length + 1);
+          body = page.querySelector(".page-body");
+          body.append(previous);
+          queue.unshift(block);
+          continue;
+        }
         page = makePage(pages.children.length + 1);
         body = page.querySelector(".page-body");
         queue.unshift(block);
         continue;
       }
-      const remainder = trySplit() || (splittable ? splitTextBlock(block, body) : null);
+      const remainder = trySplit() || (splittable && block.tagName !== "TABLE" && splitText ? splitTextBlock(block, body) : null);
       if (remainder) {
         page = makePage(pages.children.length + 1);
         body = page.querySelector(".page-body");

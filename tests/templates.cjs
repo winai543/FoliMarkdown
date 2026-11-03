@@ -38,7 +38,7 @@ const { pathToFileURL } = require('node:url');
     };
 
     await click('#templatesTop');
-    assert.equal(await page.$$eval('[data-template-id]', buttons => buttons.length), 9);
+    assert.equal(await page.$$eval('[data-template-id]', buttons => buttons.length), await page.evaluate('DOCUMENT_TEMPLATES.length'));
     await page.keyboard.press('Escape');
     assert.deepEqual(await page.evaluate(() => ({ id: activeId, count: documents.length, text: editor.value })), original);
     const ids = await page.evaluate('DOCUMENT_TEMPLATES.map(template => template.id)');
@@ -50,15 +50,15 @@ const { pathToFileURL } = require('node:url');
       await click('#templateCreate');
       await page.waitForFunction('!document.querySelector("#templateDialog").open');
       assert.equal(await page.evaluate(id => editor.value === DOCUMENT_TEMPLATES.find(item => item.id === id).text, id), true);
-      assert.equal(await page.evaluate('layout.orientation'), id === 'student-certificate' ? 'landscape' : 'portrait');
+      assert.equal(await page.evaluate('layout.orientation'), ['student-certificate', 'dashboard'].includes(id) ? 'landscape' : 'portrait');
       if (id === 'student-certificate') {
         await page.evaluate(() => paginate());
         assert.equal(await page.$$eval('#pages .page', pages => pages.length), 1, 'Certificate fits one landscape page');
       }
-      assert.equal(await page.evaluate('layout.pageNumbers'), !['student-certificate', 'wedding-invitation'].includes(id));
+      assert.equal(await page.evaluate('layout.pageNumbers'), !['student-certificate', 'wedding-invitation', 'dashboard'].includes(id));
     }
     assert.equal(await page.evaluate(id => documents.find(item => item.id === id).text, original.id), original.text);
-    assert.equal(await page.evaluate('documents.length'), original.count + 9);
+    assert.equal(await page.evaluate('documents.length'), original.count + ids.length);
     await page.evaluate(() => flushDocument());
     await page.reload(); await page.waitForFunction('ready');
     assert.equal(await page.$eval('#docName', input => input.value), 'Travel itinerary');
@@ -89,7 +89,7 @@ const { pathToFileURL } = require('node:url');
     await page.$eval('#templatePreview h2', heading => heading.scrollIntoView());
     await page.screenshot({ path: '/tmp/mdword-templates-desktop.png' });
     assert.deepEqual(errors, []);
-    console.log('PASS templates: all nine previews, creation, save preservation, cancel, layouts, persistence, library/file entry points, save failure and mobile');
+    console.log('PASS templates: all previews, creation, save preservation, cancel, layouts, persistence, library/file entry points, save failure and mobile');
   } finally {
     if (browser) await browser.close();
     await fs.rm(temporary, { recursive: true, force: true });

@@ -78,6 +78,20 @@ const DOCUMENT_TEMPLATES = [
     "description": "A trip overview with bookings, daily activities, and packing reminders.",
     "text": "# Travel Itinerary\n**Trip:** [Destination / Trip name]  \n**Travelers:** [Names]  \n**Dates:** [Start date – End date]  \n**Time zone:** [Local time zone]\n\n## Travel overview\n| Detail | Information |\n| --- | --- |\n| Outbound travel | [Date, flight / train number, departure – arrival] |\n| Return travel | [Date, flight / train number, departure – arrival] |\n| Accommodation | [Name, address, check-in / check-out] |\n| Booking references | [Transport and hotel references] |\n\n## Day 1 — Arrival and exploring\n| Time | Plan | Location / Notes |\n| --- | --- | --- |\n| 10:00 | Arrive and transfer | [Airport / Station to hotel] |\n| 12:00 | Lunch | [Restaurant / Area] |\n| 14:00 | Check in | [Hotel] |\n| 16:00 | Explore the neighborhood | [Places to visit] |\n| 19:00 | Dinner | [Reservation details] |\n\n## Day 2 — Main activities\n| Time | Plan | Location / Notes |\n| --- | --- | --- |\n| 08:00 | Breakfast | [Location] |\n| 09:00 | Main attraction | [Tickets / Booking time] |\n| 12:30 | Lunch | [Location] |\n| 14:00 | Afternoon activity | [Transport and duration] |\n| 18:30 | Dinner and free time | [Location] |\n\n## Day 3 — Departure\n- [ ] Pack and check out by [Time].\n- [ ] Transfer to airport / station at [Time].\n- [ ] Depart at [Time].\n\n::: row\n::: col\n## Useful contacts\n**Accommodation:** [Phone]  \n**Travel organizer / Local contact:** [Name and phone]\n:::\n\n::: col\n## Packing and reminders\n- [ ] Travel documents and tickets\n- [ ] Chargers and adapters\n- [ ] Clothing for the weather\n- [ ] Personal essentials\n- [ ] Offline copies of bookings and maps\n:::\n:::\n",
     "layout": {}
+  },
+  {
+    "id": "dashboard",
+    "name": "Dashboard",
+    "description": "A clean landscape overview of key metrics, sales channels, and revenue trends.",
+    "text": "# Sales dashboard\n**Reporting period:** April 2026 · **Updated:** 30 April 2026\n\n::: row\n::: col\n### Revenue\n**$128,450**\n\n↑ 12.8% vs previous period\n:::\n\n::: col\n### Orders\n**1,284**\n\n↑ 8.4% vs previous period\n:::\n\n::: col\n### Average order value\n**$100.04**\n\n↑ 3.9% vs previous period\n:::\n\n::: col\n### Conversion rate\n**4.8%**\n\n↑ 0.6 percentage points\n:::\n:::\n\n::: row\n::: col [1]\n## Orders by channel\n\n```mermaid\npie showData\n    title Orders by channel\n    \"Online\" : 642\n    \"Retail\" : 385\n    \"Partner\" : 257\n```\n:::\n\n::: col [2]\n## Revenue trend\n| Week | Revenue | Change |\n| --- | ---: | ---: |\n| Week 1 | $24,000 | — |\n| Week 2 | $28,500 | +18.8% |\n| Week 3 | $32,000 | +12.3% |\n| Week 4 | $33,950 | +6.1% |\n:::\n:::\n\n*Sample data · Update the period, chart, and weekly figures.*\n",
+    "layout": {
+      "orientation": "landscape",
+      "margin": "narrow",
+      "header": "",
+      "footer": "",
+      "pageNumbers": false,
+      "documentKind": "dashboard"
+    }
   }
 ];
 
@@ -136,7 +150,8 @@ const TEMPLATE_REPEATERS = {
       { time: '40–55 min', activity: 'Independent practice', teacherActions: 'Observe and assess', studentActions: 'Apply the skill independently' },
       { time: '55–60 min', activity: 'Review / Exit ticket', teacherActions: 'Summarize and check understanding', studentActions: 'Share one learning and one question' }
     ] }
-  }
+  },
+
 };
 
 const TEMPLATE_TEXT_BINDINGS = {
@@ -170,6 +185,20 @@ const TEMPLATE_TEXT_BINDINGS = {
   'project-proposal': [['Project Proposal', '{{proposal.title}}']],
   'daily-schedule': [['Daily Schedule', '{{schedule.title}}']],
   'lesson-plan': [['Lesson Plan', '{{lesson.title}}']],
+  dashboard: [
+    ['# Sales dashboard', '# {{dashboard.title}}'],
+    ['**Reporting period:** April 2026 · **Updated:** 30 April 2026', '**Reporting period:** {{dashboard.period}} · **Updated:** {{dashboard.updatedAt}}'],
+    ['**$128,450**', '**{{formatCurrency metrics.revenue currency locale="en-US"}}**'],
+    ['↑ 12.8% vs previous period', '{{metrics.revenueChange}}% vs previous period'],
+    ['**1,284**', '**{{formatNumber metrics.orders locale="en-US"}}**'],
+    ['↑ 8.4% vs previous period', '{{metrics.ordersChange}}% vs previous period'],
+    ['**$100.04**', '**{{formatCurrency metrics.averageOrderValue currency locale="en-US"}}**'],
+    ['↑ 3.9% vs previous period', '{{metrics.averageOrderValueChange}}% vs previous period'],
+    ['**4.8%**', '**{{formatPercent metrics.conversionRate maximumFractionDigits=1}}**'],
+    ['↑ 0.6 percentage points', '{{metrics.conversionRateChange}} percentage points vs previous period'],
+    ['| Week 1 | $24,000 | — |\n| Week 2 | $28,500 | +18.8% |\n| Week 3 | $32,000 | +12.3% |\n| Week 4 | $33,950 | +6.1% |', '{{#each weeklyRevenue}}\n| {{week}} | {{formatCurrency amount ../currency locale="en-US"}} | {{change}} |\n{{/each}}'],
+    ['*Sample data · Update the period, chart, and weekly figures.*', '*Sample data · Update the period, chart, and weekly figures.*']
+  ],
   'student-certificate': [['Certificate of Achievement', '{{certificate.title}}']],
   'wedding-invitation': [['Together with their families', '{{wedding.heading}}']],
   itinerary: [['Travel Itinerary', '{{trip.title}}']]
@@ -199,6 +228,49 @@ let selectedTemplateMode = "plain";
 function templateText(template) {
   return selectedTemplateMode === "binding" ? template.source : template.plainText;
 }
+function fitTemplatePreview() {
+  if (!selectedDocumentTemplate) return;
+  const panel = $('#templatePreviewPanel');
+  const frame = $('#templatePreviewFrame');
+  const target = $('#templatePreview');
+  const [paperWidth, paperHeight] = (selectedDocumentTemplate.layout.paperSize === 'letter' ? [816, 1056] : [794, 1123]);
+  const landscape = selectedDocumentTemplate.layout.orientation === 'landscape';
+  const pageWidth = landscape ? paperHeight : paperWidth;
+  const pageHeight = landscape ? paperWidth : paperHeight;
+  const panelRect = panel.getBoundingClientRect();
+  const previewTop = target.getBoundingClientRect().top - panelRect.top;
+  const panelStyle = getComputedStyle(panel);
+  const availableWidth = panel.clientWidth - parseFloat(panelStyle.paddingLeft) - parseFloat(panelStyle.paddingRight) - 16;
+  const availableHeight = panel.clientHeight - previewTop - parseFloat(panelStyle.paddingBottom) - 8;
+  const scale = availableWidth > 0 && availableHeight > 0
+    ? Math.min(availableWidth / pageWidth, availableHeight / pageHeight)
+    : 1;
+  frame.style.width = `${pageWidth * scale}px`;
+  frame.style.height = `${pageHeight * scale}px`;
+  target.style.width = `${pageWidth}px`;
+  target.style.height = `${pageHeight}px`;
+  target.style.transform = `scale(${scale})`;
+}
+async function renderTemplateDiagrams(preview) {
+  const figures = [...preview.querySelectorAll('.mermaid-figure')];
+  if (!figures.length) return;
+  let mermaid;
+  try { mermaid = await loadMermaid(); }
+  catch { mermaid = null; }
+  await Promise.all(figures.map(async (figure) => {
+    try {
+      if (!mermaid) throw new Error('Mermaid is unavailable');
+      const result = await mermaid.render(`folimarkdown-template-${++diagramSerial}`, figure.dataset.mermaidSource);
+      if (figure.isConnected) figure.innerHTML = result.svg;
+    } catch {
+      if (!figure.isConnected) return;
+      const message = document.createElement('div');
+      message.className = 'diagram-error';
+      message.textContent = 'Could not render this chart. Check your connection and try again.';
+      figure.replaceChildren(message);
+    }
+  }));
+}
 function setTemplateMode(mode) {
   selectedTemplateMode = mode === "binding" ? "binding" : "plain";
   $("#templateModePlain").setAttribute("aria-pressed", String(selectedTemplateMode === "plain"));
@@ -222,10 +294,13 @@ function selectDocumentTemplate(id) {
   const target = $('#templatePreview');
   target.replaceChildren(...preview.childNodes);
   target.classList.toggle('certificate-preview', template.id === 'student-certificate');
+  target.classList.toggle('dashboard-preview', template.id === 'dashboard');
   target.style.backgroundColor = template.layout.backgroundColor || '#ffffff';
   target.style.backgroundImage = template.layout.backgroundImage ? `url("${template.layout.backgroundImage}")` : 'none';
   target.style.backgroundSize = template.layout.backgroundSize === 'stretch' ? '100% 100%' : template.layout.backgroundSize || 'cover';
   target.style.backgroundPosition = 'center';
+  fitTemplatePreview();
+  renderTemplateDiagrams(target);
 }
 function openDocumentTemplates() {
   if (!ready || libraryBusy) return;
@@ -236,6 +311,7 @@ function openDocumentTemplates() {
   selectDocumentTemplate(selectedDocumentTemplate?.id || DOCUMENT_TEMPLATES[0].id);
   $('#templateError').textContent = '';
   $('#templateDialog').showModal();
+  requestAnimationFrame(fitTemplatePreview);
 }
 async function createDocumentFromTemplate() {
   if (!ready || libraryBusy || !selectedDocumentTemplate) return;
@@ -264,6 +340,8 @@ async function createDocumentFromTemplate() {
   }
 }
 function initializeDocumentTemplates() {
+  const previewObserver = new ResizeObserver(() => requestAnimationFrame(fitTemplatePreview));
+  previewObserver.observe($('#templatePreviewPanel'));
   for (const template of DOCUMENT_TEMPLATES) {
     const button = document.createElement('button');
     button.type = 'button';

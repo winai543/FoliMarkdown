@@ -67,7 +67,7 @@ function validateLayout(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("layout must be an object");
   const allowed = { paperSize: ["a4", "letter"], orientation: ["portrait", "landscape"],
     margin: ["normal", "narrow", "wide"], backgroundSize: ["cover", "contain", "stretch"],
-    documentKind: ["certificate"], font: fonts };
+    documentKind: ["certificate", "dashboard"], font: fonts };
   const layout = {};
   for (let [key, field] of Object.entries(value)) {
     if (allowed[key]) {

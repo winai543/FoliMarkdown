@@ -12,7 +12,10 @@
         module.default.initialize({
           startOnLoad: false, securityLevel: "strict", theme: "neutral",
           themeVariables: {
-            xyChart: { plotColorPalette: "#14685f, #2563eb, #b45309, #7c3aed, #be123c" }
+            xyChart: { plotColorPalette: "#14685f, #2563eb, #b45309, #7c3aed, #be123c" },
+            pie1: "#1b3557", pie2: "#14685f", pie3: "#78a99d", pie4: "#c9ddd6",
+            pieTitleTextColor: "#1b3557", pieSectionTextColor: "#25332e", pieLegendTextColor: "#405149",
+            pieStrokeColor: "#ffffff", pieStrokeWidth: 2, pieOuterStrokeColor: "#d6e2de"
           },
           flowchart: { htmlLabels: false }
         });

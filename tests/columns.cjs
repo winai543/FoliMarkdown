@@ -87,7 +87,7 @@ const { pathToFileURL } = require('node:url');
     const paragraphs = await page.$$eval('#pages .markdown-col > p', items => items.map(item => item.textContent));
     assert.equal(paragraphs.length, 75); assert.equal(new Set(paragraphs).size, 75);
     assert.ok(await page.$$eval('#pages .page', pages => pages.length > 1));
-    assert.ok(await page.$$eval('#pages .markdown-row', rows => rows.every(row => row.children.length === 2)));
+    assert.ok(await page.$$eval('#pages .markdown-row', rows => rows.every(row => row.querySelectorAll(':scope > .markdown-col').length === 2)));
     assert.ok(await page.$$eval('#pages .page-body', bodies => bodies.every(body => !body.lastElementChild || body.lastElementChild.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom + 1)));
     const exported = await page.evaluate(() => new DOMParser().parseFromString(exportHtml(), 'text/html').querySelectorAll('.markdown-row').length);
     assert.ok(exported > 1);
