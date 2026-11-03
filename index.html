@@ -188,8 +188,8 @@
       <button type="button" class="tool big" id="dataResetPreview" title="Show the original template in the preview" disabled><svg viewBox="0 0 24 24"><path d="M4 7v5h5M5.5 12a7 7 0 1 0 2-5L4 12"/></svg><span>Reset preview</span></button>
     </div><div class="group-label">Template</div></div>
     <div class="ribbon-group"><div class="group-content">
-      <button type="button" class="tool big" id="loliFunctionsOpen" title="Create reusable Loli Script functions"><svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2M9 8l-3 4 3 4M15 8l3 4-3 4M14 6l-4 12"/></svg><span>Functions</span></button>
-    </div><div class="group-label">Loli Script</div></div>
+      <button type="button" class="tool big" id="foliFunctionsOpen" title="Create reusable Foli Script functions"><svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2M9 8l-3 4 3 4M15 8l3 4-3 4M14 6l-4 12"/></svg><span>Functions</span></button>
+    </div><div class="group-label">Foli Script</div></div>
     <span id="dataRibbonSummary" class="data-ribbon-summary">No fields detected</span>
   </div>
 
@@ -260,17 +260,17 @@
   </div>
   <footer class="chart-dialog-footer"><span id="dataStatus" role="status" aria-live="polite"></span><button type="button" id="dataCancel" class="library-button">Cancel</button><button type="button" id="dataApply" class="library-button primary" disabled>Apply data</button></footer>
 </dialog>
-<dialog id="loliFunctionsDialog" class="chart-dialog loli-functions-dialog" aria-labelledby="loliFunctionsTitle">
-  <header class="chart-dialog-head"><div><h2 id="loliFunctionsTitle">Loli Script functions</h2><p>Create reusable formula functions and call them with <code>{{loli "functionName(value)"}}</code>. Functions are saved on this device.</p></div><button type="button" id="loliFunctionsClose" class="icon-only" aria-label="Close functions">×</button></header>
-  <div class="loli-functions-body">
-    <section class="loli-functions-list-panel"><div class="loli-functions-list-head"><strong>Saved functions</strong><button type="button" id="loliFunctionNew" class="library-button">＋ New</button></div><div id="loliFunctionList" class="loli-function-list"></div></section>
-    <form id="loliFunctionForm" class="loli-function-form">
-      <label for="loliFunctionName">Function name</label><input id="loliFunctionName" required maxlength="40" placeholder="netAmount">
-      <label for="loliFunctionParams">Parameters</label><input id="loliFunctionParams" maxlength="160" placeholder="amount, discount">
-      <label for="loliFunctionExpression">Expression</label><textarea id="loliFunctionExpression" required rows="5" spellcheck="false" placeholder="round(amount * (1 - discount / 100), 2)"></textarea>
-      <p class="chart-help">Use parameter names, JSON fields and Loli operators/functions. JavaScript statements and arbitrary code are not supported.</p>
-      <p id="loliFunctionError" class="chart-error" role="alert"></p>
-      <div class="loli-function-actions"><button type="button" id="loliFunctionDelete" class="library-button" disabled>Delete</button><button type="submit" class="library-button primary">Save function</button></div>
+<dialog id="foliFunctionsDialog" class="chart-dialog foli-functions-dialog" aria-labelledby="foliFunctionsTitle">
+  <header class="chart-dialog-head"><div><h2 id="foliFunctionsTitle">Foli Script functions</h2><p>Create reusable formula functions and call them with <code>{{foli "functionName(value)"}}</code>. Functions are saved on this device.</p></div><button type="button" id="foliFunctionsClose" class="icon-only" aria-label="Close functions">×</button></header>
+  <div class="foli-functions-body">
+    <section class="foli-functions-list-panel"><div class="foli-functions-list-head"><strong>Saved functions</strong><button type="button" id="foliFunctionNew" class="library-button">＋ New</button></div><div id="foliFunctionList" class="foli-function-list"></div></section>
+    <form id="foliFunctionForm" class="foli-function-form">
+      <label for="foliFunctionName">Function name</label><input id="foliFunctionName" required maxlength="40" placeholder="netAmount">
+      <label for="foliFunctionParams">Parameters</label><input id="foliFunctionParams" maxlength="160" placeholder="amount, discount">
+      <label for="foliFunctionExpression">Expression</label><textarea id="foliFunctionExpression" required rows="5" spellcheck="false" placeholder="round(amount * (1 - discount / 100), 2)"></textarea>
+      <p class="chart-help">Use parameter names, JSON fields and Foli operators/functions. JavaScript statements and arbitrary code are not supported.</p>
+      <p id="foliFunctionError" class="chart-error" role="alert"></p>
+      <div class="foli-function-actions"><button type="button" id="foliFunctionDelete" class="library-button" disabled>Delete</button><button type="submit" class="library-button primary">Save function</button></div>
     </form>
   </div>
 </dialog>

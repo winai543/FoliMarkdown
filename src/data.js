@@ -3,20 +3,20 @@
 let dataTemplateSource = "";
 let dataPreviewOutput = null;
 registerFoliMarkdownFormatters(Handlebars);
-const LOLI_FUNCTION_STORAGE_KEY = "folimarkdown.loliFunctions.v1";
-let activeLoliFunction = null;
-function loadLoliFunctions() {
+const FOLI_FUNCTION_STORAGE_KEY = "folimarkdown.foliScriptFunctions.v1";
+let activeFoliFunction = null;
+function loadFoliFunctions() {
   try {
-    const stored = JSON.parse(localStorage.getItem(LOLI_FUNCTION_STORAGE_KEY) || "{}");
+    const stored = JSON.parse(localStorage.getItem(FOLI_FUNCTION_STORAGE_KEY) || "{}");
     return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
   } catch { return {}; }
 }
-globalThis.foliLoliFunctions = loadLoliFunctions();
+globalThis.foliScriptFunctions = loadFoliFunctions();
 const FORMATTING_HELPERS = new Set([
   "format", "formatNumber", "formatCurrency", "formatDate", "formatTime", "formatPercent",
   "uppercase", "lowercase", "capitalize", "join", "default", "add", "sum", "subtract",
   "multiply", "divide", "average", "min", "max", "round", "ceil", "floor", "abs",
-  "power", "mod", "percent", "loli"
+  "power", "mod", "percent", "foli"
 ]);
 
 function schemaPath(root, path, leafValue = "") {
@@ -108,7 +108,7 @@ function handlebarsSchema(markdown) {
     const tokens = value.match(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+/g) || [];
     const helper = tokens[0];
     if (FORMATTING_HELPERS.has(helper)) {
-      if (helper === "loli" && tokens[1]) {
+      if (helper === "foli" && tokens[1]) {
         let script = tokens[1];
         try { script = script[0] === '"' ? JSON.parse(script) : script.slice(1, -1).replace(/\\(['\\])/g, "$1"); } catch { /* Keep malformed input for field discovery. */ }
         const code = script.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, " ");
@@ -217,17 +217,17 @@ function initializeDataTab() {
     setDataPanelStatus("Preview reset to the original template.", "success");
   });
   $("#dataJson").addEventListener("input", () => setDataPanelStatus("JSON edited. Apply it to update the document.", "ready"));
-  initializeLoliFunctions();
+  initializeFoliFunctions();
 }
 
-function renderLoliFunctionList() {
-  const list = $("#loliFunctionList");
+function renderFoliFunctionList() {
+  const list = $("#foliFunctionList");
   list.replaceChildren();
-  const definitions = globalThis.foliLoliFunctions || {};
+  const definitions = globalThis.foliScriptFunctions || {};
   const names = Object.keys(definitions).sort((a, b) => a.localeCompare(b));
   if (!names.length) {
     const empty = document.createElement("p");
-    empty.className = "loli-function-empty";
+    empty.className = "foli-function-empty";
     empty.textContent = "No functions saved yet. Create one to reuse calculations in your templates.";
     list.append(empty);
     return;
@@ -236,82 +236,82 @@ function renderLoliFunctionList() {
     const definition = definitions[name];
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "loli-function-item";
-    button.setAttribute("aria-current", String(name === activeLoliFunction));
+    button.className = "foli-function-item";
+    button.setAttribute("aria-current", String(name === activeFoliFunction));
     const signature = document.createElement("code");
     signature.textContent = `${name}(${(definition.params || []).join(", ")})`;
     const expression = document.createElement("small");
     expression.textContent = definition.expression || "";
     button.append(signature, expression);
-    button.addEventListener("click", () => editLoliFunction(name));
+    button.addEventListener("click", () => editFoliFunction(name));
     list.append(button);
   }
 }
 
-function editLoliFunction(name) {
-  const definition = globalThis.foliLoliFunctions?.[name];
+function editFoliFunction(name) {
+  const definition = globalThis.foliScriptFunctions?.[name];
   if (!definition) return;
-  activeLoliFunction = name;
-  $("#loliFunctionName").value = name;
-  $("#loliFunctionParams").value = (definition.params || []).join(", ");
-  $("#loliFunctionExpression").value = definition.expression || "";
-  $("#loliFunctionDelete").disabled = false;
-  $("#loliFunctionError").textContent = "";
-  renderLoliFunctionList();
+  activeFoliFunction = name;
+  $("#foliFunctionName").value = name;
+  $("#foliFunctionParams").value = (definition.params || []).join(", ");
+  $("#foliFunctionExpression").value = definition.expression || "";
+  $("#foliFunctionDelete").disabled = false;
+  $("#foliFunctionError").textContent = "";
+  renderFoliFunctionList();
 }
 
-function newLoliFunction() {
-  activeLoliFunction = null;
-  $("#loliFunctionForm").reset();
-  $("#loliFunctionDelete").disabled = true;
-  $("#loliFunctionError").textContent = "";
-  renderLoliFunctionList();
-  $("#loliFunctionName").focus();
+function newFoliFunction() {
+  activeFoliFunction = null;
+  $("#foliFunctionForm").reset();
+  $("#foliFunctionDelete").disabled = true;
+  $("#foliFunctionError").textContent = "";
+  renderFoliFunctionList();
+  $("#foliFunctionName").focus();
 }
 
-function saveLoliFunction(event) {
+function saveFoliFunction(event) {
   event.preventDefault();
-  const name = $("#loliFunctionName").value.trim();
-  const paramsText = $("#loliFunctionParams").value.trim();
-  const expression = $("#loliFunctionExpression").value.trim();
+  const name = $("#foliFunctionName").value.trim();
+  const paramsText = $("#foliFunctionParams").value.trim();
+  const expression = $("#foliFunctionExpression").value.trim();
   const params = paramsText ? paramsText.split(",").map(item => item.trim()) : [];
   const reserved = new Set([...FORMATTING_HELPERS, "if", "each", "with", "lookup", "log", "true", "false", "null", "this"]);
   try {
     if (!/^[A-Za-z_$][\w$]*$/.test(name) || reserved.has(name)) throw new Error("Choose a valid function name that is not a built-in helper.");
     if (params.length > 10 || params.some(param => !/^[A-Za-z_$][\w$]*$/.test(param) || reserved.has(param)) || new Set(params).size !== params.length) throw new Error("Parameters must be unique names, with up to 10 parameters.");
-    if (!expression) throw new Error("Enter a Loli Script expression for this function.");
-    const next = { ...(globalThis.foliLoliFunctions || {}) };
-    if (activeLoliFunction && activeLoliFunction !== name) delete next[activeLoliFunction];
+    if (!expression) throw new Error("Enter a Foli Script expression for this function.");
+    const next = { ...(globalThis.foliScriptFunctions || {}) };
+    if (activeFoliFunction && activeFoliFunction !== name) delete next[activeFoliFunction];
     next[name] = { params, expression };
     if (Object.keys(next).length > 50) throw new Error("You can save up to 50 functions.");
     const sample = Object.fromEntries(params.map(param => [param, 100]));
-    registerFoliMarkdownFormatters.evaluateLoliScript(expression, {}, sample, next);
-    localStorage.setItem(LOLI_FUNCTION_STORAGE_KEY, JSON.stringify(next));
-    globalThis.foliLoliFunctions = next;
-    activeLoliFunction = name;
-    $("#loliFunctionDelete").disabled = false;
-    $("#loliFunctionError").textContent = "Function saved. Call it inside {{loli \"...\"}}.";
-    renderLoliFunctionList();
+    registerFoliMarkdownFormatters.evaluateFoliScript(expression, {}, sample, next);
+    localStorage.setItem(FOLI_FUNCTION_STORAGE_KEY, JSON.stringify(next));
+    globalThis.foliScriptFunctions = next;
+    activeFoliFunction = name;
+    $("#foliFunctionDelete").disabled = false;
+    $("#foliFunctionError").textContent = "Function saved. Call it inside {{foli \"...\"}}.";
+    renderFoliFunctionList();
     if (dataPreviewOutput !== null) {
       try {
         const data = JSON.parse($("#dataJson").value);
         dataPreviewOutput = Handlebars.compile(dataTemplateSource, { noEscape: false })(data);
         render();
-      } catch (error) { $("#loliFunctionError").textContent = `Saved, but preview could not update: ${error.message}`; }
+      } catch (error) { $("#foliFunctionError").textContent = `Saved, but preview could not update: ${error.message}`; }
     }
   } catch (error) {
-    $("#loliFunctionError").textContent = error.message;
+    $("#foliFunctionError").textContent = error.message;
   }
 }
 
-function deleteLoliFunction() {
-  if (!activeLoliFunction || !globalThis.foliLoliFunctions?.[activeLoliFunction]) return;
-  const next = { ...globalThis.foliLoliFunctions };
-  delete next[activeLoliFunction];
-  try { localStorage.setItem(LOLI_FUNCTION_STORAGE_KEY, JSON.stringify(next)); }
-  catch (error) { $("#loliFunctionError").textContent = `Could not save function library: ${error.message}`; return; }
-  globalThis.foliLoliFunctions = next;
-  newLoliFunction();
+function deleteFoliFunction() {
+  if (!activeFoliFunction || !globalThis.foliScriptFunctions?.[activeFoliFunction]) return;
+  const next = { ...globalThis.foliScriptFunctions };
+  delete next[activeFoliFunction];
+  try { localStorage.setItem(FOLI_FUNCTION_STORAGE_KEY, JSON.stringify(next)); }
+  catch (error) { $("#foliFunctionError").textContent = `Could not save function library: ${error.message}`; return; }
+  globalThis.foliScriptFunctions = next;
+  newFoliFunction();
   if (dataPreviewOutput !== null) {
     try {
       const data = JSON.parse($("#dataJson").value);
@@ -321,13 +321,13 @@ function deleteLoliFunction() {
   }
 }
 
-function initializeLoliFunctions() {
-  $("#loliFunctionsOpen").addEventListener("click", () => {
-    newLoliFunction();
-    $("#loliFunctionsDialog").showModal();
+function initializeFoliFunctions() {
+  $("#foliFunctionsOpen").addEventListener("click", () => {
+    newFoliFunction();
+    $("#foliFunctionsDialog").showModal();
   });
-  $("#loliFunctionsClose").addEventListener("click", () => $("#loliFunctionsDialog").close());
-  $("#loliFunctionNew").addEventListener("click", newLoliFunction);
-  $("#loliFunctionForm").addEventListener("submit", saveLoliFunction);
-  $("#loliFunctionDelete").addEventListener("click", deleteLoliFunction);
+  $("#foliFunctionsClose").addEventListener("click", () => $("#foliFunctionsDialog").close());
+  $("#foliFunctionNew").addEventListener("click", newFoliFunction);
+  $("#foliFunctionForm").addEventListener("submit", saveFoliFunction);
+  $("#foliFunctionDelete").addEventListener("click", deleteFoliFunction);
 }

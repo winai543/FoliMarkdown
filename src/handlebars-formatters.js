@@ -76,16 +76,16 @@
   };
   const formulaResult = value => Number.isFinite(value) ? value : "";
 
-  function evaluateLoliScript(source, root, context, userFunctions = {}, depth = 0) {
-    if (depth > 12) throw new Error("Loli function nesting is too deep.");
-    if (typeof source !== "string" || source.length > 2000) throw new Error("Loli Script expects an expression under 2,000 characters.");
+  function evaluateFoliScript(source, root, context, userFunctions = {}, depth = 0) {
+    if (depth > 12) throw new Error("Foli function nesting is too deep.");
+    if (typeof source !== "string" || source.length > 2000) throw new Error("Foli Script expects an expression under 2,000 characters.");
     const tokens = [];
     const pattern = /\s+|(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|===|!==|==|!=|<=|>=|&&|\|\||\*\*|[A-Za-z_$][\w$]*|[(),+\-*/%!<>.]/gy;
     let offset = 0, match;
     while (offset < source.length) {
       pattern.lastIndex = offset;
       match = pattern.exec(source);
-      if (!match) throw new Error(`Unsupported Loli Script syntax near: ${source.slice(offset, offset + 20)}`);
+      if (!match) throw new Error(`Unsupported Foli Script syntax near: ${source.slice(offset, offset + 20)}`);
       offset = pattern.lastIndex;
       if (!/^\s+$/.test(match[0])) tokens.push(match[0]);
     }
@@ -112,14 +112,14 @@
     const precedence = { "||": 1, "&&": 2, "==": 3, "===": 3, "!=": 3, "!==": 3, "<": 4, "<=": 4, ">": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6, "**": 7 };
     function primary() {
       const token = take();
-      if (token === undefined) throw new Error("Unexpected end of Loli Script expression.");
+      if (token === undefined) throw new Error("Unexpected end of Foli Script expression.");
       if (token === "!" || token === "+" || token === "-") {
         const value = primary();
         return token === "!" ? !value : token === "+" ? Number(value) : -Number(value);
       }
       if (token === "(") {
         const value = expression(0);
-        if (take() !== ")") throw new Error("Missing closing parenthesis in Loli Script.");
+        if (take() !== ")") throw new Error("Missing closing parenthesis in Foli Script.");
         return value;
       }
       if (/^(?:\d|\.)/.test(token)) return Number(token);
@@ -128,27 +128,27 @@
       if (token === "true") return true;
       if (token === "false") return false;
       if (token === "null") return null;
-      if (!/^[A-Za-z_$][\w$]*$/.test(token)) throw new Error(`Unexpected token in Loli Script: ${token}`);
+      if (!/^[A-Za-z_$][\w$]*$/.test(token)) throw new Error(`Unexpected token in Foli Script: ${token}`);
       if (peek() === "(") {
         take();
         const args = [];
         if (peek() !== ")") {
           do { args.push(expression(0)); if (peek() !== ",") break; take(); } while (true);
         }
-        if (take() !== ")") throw new Error("Missing closing parenthesis in Loli Script function.");
+        if (take() !== ")") throw new Error("Missing closing parenthesis in Foli Script function.");
         if (Object.hasOwn(functions, token)) return functions[token](args);
         const definition = userFunctions && Object.hasOwn(userFunctions, token) ? userFunctions[token] : null;
-        if (!definition || !Array.isArray(definition.params) || typeof definition.expression !== "string") throw new Error(`Loli Script function is not allowed: ${token}`);
+        if (!definition || !Array.isArray(definition.params) || typeof definition.expression !== "string") throw new Error(`Foli Script function is not allowed: ${token}`);
         const scope = Object.create(null);
         if (context && typeof context === "object") for (const key of Object.keys(context)) if (safeKey(key)) scope[key] = context[key];
         definition.params.forEach((name, position) => { if (safeKey(name)) scope[name] = args[position]; });
-        return evaluateLoliScript(definition.expression, root, scope, userFunctions, depth + 1);
+        return evaluateFoliScript(definition.expression, root, scope, userFunctions, depth + 1);
       }
       const path = [token];
       while (peek() === ".") {
         take();
         const part = take();
-        if (!/^[A-Za-z_$][\w$]*$/.test(part || "") || !safeKey(part)) throw new Error("Unsupported property path in Loli Script.");
+        if (!/^[A-Za-z_$][\w$]*$/.test(part || "") || !safeKey(part)) throw new Error("Unsupported property path in Foli Script.");
         path.push(part);
       }
       if (path[0] === "this") return getPath(context, path.slice(1));
@@ -180,14 +180,14 @@
       return left;
     }
     const result = expression(0);
-    if (index !== tokens.length) throw new Error(`Unexpected token in Loli Script: ${peek()}`);
+    if (index !== tokens.length) throw new Error(`Unexpected token in Foli Script: ${peek()}`);
     return typeof result === "number" && !Number.isFinite(result) ? "" : result;
   }
 
   const registerFoliMarkdownFormatters = function (Handlebars) {
-    Handlebars.registerHelper("loli", function (source, options) {
-      if (!isOptions(options)) throw new Error("Use Loli Script as {{loli \"expression\"}}.");
-      return evaluateLoliScript(source, options.data?.root || this, this, globalThis.foliLoliFunctions || {});
+    Handlebars.registerHelper("foli", function (source, options) {
+      if (!isOptions(options)) throw new Error("Use Foli Script as {{foli \"expression\"}}.");
+      return evaluateFoliScript(source, options.data?.root || this, this, globalThis.foliScriptFunctions || {});
     });
     const formulas = {
       add: values => values.length ? values.reduce((total, value) => total + value, 0) : 0,
@@ -264,6 +264,6 @@
       return value == null || value === "" ? text(actualFallback) : text(value);
     });
   };
-  registerFoliMarkdownFormatters.evaluateLoliScript = evaluateLoliScript;
+  registerFoliMarkdownFormatters.evaluateFoliScript = evaluateFoliScript;
   return registerFoliMarkdownFormatters;
 });

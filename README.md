@@ -186,9 +186,9 @@ Built-in templates keep Handlebars bindings such as `{{invoice.number}}` in the 
 
 Handlebars templates also support spreadsheet-style numeric formulas, for example `{{multiply quantity unitPrice}}` and `{{formatCurrency (add subtotal tax) "THB"}}`. See the [formula and formatting helper guide](docs/cli.md#จัดรูปแบบค่าด้วย-helpers).
 
-For JavaScript-style expressions, use Loli Script inside a Handlebars expression, such as `{{loli "round(totals.revenue / totals.units, 2)"}}`. The [monthly report template](examples/monthly-report.hbs) includes this example.
+For JavaScript-style expressions, use Foli Script inside a Handlebars expression, such as `{{foli "round(totals.revenue / totals.units, 2)"}}`. The [monthly report template](examples/monthly-report.hbs) includes this example.
 
-Create reusable Loli functions from **Data → Functions** by entering a function name, parameters, and an expression. For example, define `netAmount` with parameters `amount, discount` and expression `round(amount * (1 - discount / 100), 2)`, then call it in a template with `{{loli "netAmount(invoice.subtotal, invoice.discount)"}}`. The function library is saved on this device and can be reused across documents.
+Create reusable Foli functions from **Data → Functions** by entering a function name, parameters, and an expression. For example, define `netAmount` with parameters `amount, discount` and expression `round(amount * (1 - discount / 100), 2)`, then call it in a template with `{{foli "netAmount(invoice.subtotal, invoice.discount)"}}`. The function library is saved on this device and can be reused across documents.
 
 Templates work offline, remain standard Markdown, and support the existing Markdown, HTML, DOCX, PDF, and print exports.
 

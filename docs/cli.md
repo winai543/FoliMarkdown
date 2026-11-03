@@ -125,14 +125,14 @@ folimarkdown examples/monthly-report.hbs \
 {{multiply quantity unitPrice}}
 {{formatCurrency (add subtotal tax) "THB" locale="th-TH"}}
 {{formatNumber (average scores) maximumFractionDigits=1}}
-{{loli "round(totals.revenue / totals.units, 2)"}}
+{{foli "round(totals.revenue / totals.units, 2)"}}
 ```
 
 มี helper สำหรับสูตร `add`, `sum`, `subtract`, `multiply`, `divide`, `average`, `min`, `max`, `round`, `ceil`, `floor`, `abs`, `power`, `mod` และ `percent` ซึ่งรับตัวเลขหลายค่าได้ เช่น `{{multiply quantity unitPrice}}` หรือ `{{formatCurrency (add subtotal tax) "THB" locale="th-TH"}}`; `sum` และ `average` รับ array ได้ด้วย ส่วน `percent amount rate` คำนวณ amount × rate ÷ 100 ใช้สูตรซ้อนในวงเล็บเพื่อส่งผลคำนวณเข้า formatter ได้
 
-**Loli Script** เป็น JavaScript expression แบบย่อ เรียกจาก Handlebars ด้วย `{{loli "expression"}}` เช่น `{{loli "round(totals.revenue / totals.units, 2)"}}` รองรับการอ้าง field แบบ dot path, วงเล็บ, ตัวดำเนินการ `+ - * / % **`, เปรียบเทียบ, `&&` / `||` และฟังก์ชันคำนวณ `abs`, `ceil`, `floor`, `round`, `min`, `max`, `sum`, `average`, `percent` โดยไม่รองรับคำสั่งหรือการเรียก JavaScript ทั่วไป ตัวอย่างใน [`examples/monthly-report.hbs`](../examples/monthly-report.hbs) แสดงรายได้เฉลี่ยต่อหน่วย
+**Foli Script** เป็น JavaScript expression แบบย่อ เรียกจาก Handlebars ด้วย `{{foli "expression"}}` เช่น `{{foli "round(totals.revenue / totals.units, 2)"}}` รองรับการอ้าง field แบบ dot path, วงเล็บ, ตัวดำเนินการ `+ - * / % **`, เปรียบเทียบ, `&&` / `||` และฟังก์ชันคำนวณ `abs`, `ceil`, `floor`, `round`, `min`, `max`, `sum`, `average`, `percent` โดยไม่รองรับคำสั่งหรือการเรียก JavaScript ทั่วไป ตัวอย่างใน [`examples/monthly-report.hbs`](../examples/monthly-report.hbs) แสดงรายได้เฉลี่ยต่อหน่วย
 
-ในแอป เลือก **Data → Functions** เพื่อสร้าง reusable function จากชื่อ พารามิเตอร์ และ expression เช่น ชื่อ `netAmount`, พารามิเตอร์ `amount, discount`, expression `round(amount * (1 - discount / 100), 2)` แล้วเรียกใน template ด้วย `{{loli "netAmount(invoice.subtotal, invoice.discount)"}}` รายการ function บันทึกไว้ในเครื่องและใช้ซ้ำได้กับเอกสารในแอป; CLI/API รองรับ Loli built-in functions แต่ไม่ได้อ่าน function library ในเครื่อง
+ในแอป เลือก **Data → Functions** เพื่อสร้าง reusable function จากชื่อ พารามิเตอร์ และ expression เช่น ชื่อ `netAmount`, พารามิเตอร์ `amount, discount`, expression `round(amount * (1 - discount / 100), 2)` แล้วเรียกใน template ด้วย `{{foli "netAmount(invoice.subtotal, invoice.discount)"}}` รายการ function บันทึกไว้ในเครื่องและใช้ซ้ำได้กับเอกสารในแอป; CLI/API รองรับ Foli built-in functions แต่ไม่ได้อ่าน function library ในเครื่อง
 
 format helpers ได้แก่ `formatNumber`, `formatCurrency`, `formatDate`, `formatTime`, `formatPercent`, `uppercase`, `lowercase`, `capitalize`, `join`, `default` และ helper แบบรวม `format value "number|currency|date|time|percent"` ค่า locale ใช้รูปแบบ BCP 47 เช่น `en-US` หรือ `th-TH`; วันเวลาควรส่งเป็น ISO 8601 เพื่อให้ตีความได้แน่นอน `formatDate` รองรับ style `short`, `medium`, `long`, `full` ส่วน number/currency รองรับตัวเลือกของ `Intl.NumberFormat` เช่น `minimumFractionDigits` และ `maximumFractionDigits`
 
