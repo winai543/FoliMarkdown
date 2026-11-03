@@ -5,6 +5,7 @@ initializeDiagramEditor();
 initializeTableEditor();
 initializeLayoutEditor();
 initializeDocumentTemplates();
+initializeDataTab();
 const libraryStarted = startLibrary();
 initializeDesktop(libraryStarted).catch(error => {
   console.error("Desktop setup failed:", error);

@@ -31,6 +31,7 @@
     <button class="tab" data-tab="diagram">Diagram</button>
     <button class="tab" data-tab="layout">Layout</button>
     <button class="tab" data-tab="view">View</button>
+    <button class="tab" data-tab="data">Data</button>
   </nav>
 
   <div class="ribbon" data-ribbon="home">
@@ -181,6 +182,17 @@
     </div><div class="group-label">Display</div></div>
   </div>
 
+  <div class="ribbon" data-ribbon="data" hidden>
+    <div class="ribbon-group"><div class="group-content">
+      <button type="button" class="tool big" id="dataOpen" title="Enter JSON values for Handlebars fields"><svg viewBox="0 0 24 24"><path d="M8 4C6 4 6 6 6 8v1c0 2-1 3-3 3 2 0 3 1 3 3v1c0 2 0 4 2 4M16 4c2 0 2 2 2 4v1c0 2 1 3 3 3-2 0-3 1-3 3v1c0 2 0 4-2 4M10 9h.01M14 15h.01M14 9l-4 6"/></svg><span>Bind data</span></button>
+      <button type="button" class="tool big" id="dataResetPreview" title="Show the original template in the preview" disabled><svg viewBox="0 0 24 24"><path d="M4 7v5h5M5.5 12a7 7 0 1 0 2-5L4 12"/></svg><span>Reset preview</span></button>
+    </div><div class="group-label">Template</div></div>
+    <div class="ribbon-group"><div class="group-content">
+      <button type="button" class="tool big" id="loliFunctionsOpen" title="Create reusable Loli Script functions"><svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2M9 8l-3 4 3 4M15 8l3 4-3 4M14 6l-4 12"/></svg><span>Functions</span></button>
+    </div><div class="group-label">Loli Script</div></div>
+    <span id="dataRibbonSummary" class="data-ribbon-summary">No fields detected</span>
+  </div>
+
   <main class="workspace">
     <aside class="navigation" id="navigation">
       <div class="nav-header"><span>Navigation</span><button class="icon-only" id="closeNav" aria-label="Close navigation">×</button></div>
@@ -238,6 +250,29 @@
     <section class="template-preview-panel" aria-labelledby="templatePreviewTitle"><h3 id="templatePreviewTitle"></h3><article id="templatePreview" class="document template-preview"></article></section>
   </div>
   <footer class="chart-dialog-footer"><p id="templateError" class="chart-error" role="alert"></p><button type="button" id="templateCancel" class="library-button">Cancel</button><button type="button" id="templateCreate" class="library-button primary">Create document</button></footer>
+</dialog>
+<dialog id="dataDialog" class="chart-dialog data-dialog" aria-labelledby="dataTitle">
+  <header class="chart-dialog-head"><div><h2 id="dataTitle">Bind template data</h2><p>Enter JSON values for the Handlebars fields in this Markdown.</p></div><button type="button" id="dataClose" class="icon-only" aria-label="Close data editor">×</button></header>
+  <div class="data-dialog-body">
+    <div class="data-dialog-meta"><strong>JSON data</strong><span id="dataFieldCount" role="status">No fields detected</span></div>
+    <textarea id="dataJson" rows="14" spellcheck="false" aria-label="JSON data for Handlebars bindings">{}</textarea>
+    <p class="data-dialog-help">The field structure is detected from <code>{{field}}</code> and <code>{{#each items}}</code>. Applying data updates the preview only; your Markdown source stays unchanged.</p>
+  </div>
+  <footer class="chart-dialog-footer"><span id="dataStatus" role="status" aria-live="polite"></span><button type="button" id="dataCancel" class="library-button">Cancel</button><button type="button" id="dataApply" class="library-button primary" disabled>Apply data</button></footer>
+</dialog>
+<dialog id="loliFunctionsDialog" class="chart-dialog loli-functions-dialog" aria-labelledby="loliFunctionsTitle">
+  <header class="chart-dialog-head"><div><h2 id="loliFunctionsTitle">Loli Script functions</h2><p>Create reusable formula functions and call them with <code>{{loli "functionName(value)"}}</code>. Functions are saved on this device.</p></div><button type="button" id="loliFunctionsClose" class="icon-only" aria-label="Close functions">×</button></header>
+  <div class="loli-functions-body">
+    <section class="loli-functions-list-panel"><div class="loli-functions-list-head"><strong>Saved functions</strong><button type="button" id="loliFunctionNew" class="library-button">＋ New</button></div><div id="loliFunctionList" class="loli-function-list"></div></section>
+    <form id="loliFunctionForm" class="loli-function-form">
+      <label for="loliFunctionName">Function name</label><input id="loliFunctionName" required maxlength="40" placeholder="netAmount">
+      <label for="loliFunctionParams">Parameters</label><input id="loliFunctionParams" maxlength="160" placeholder="amount, discount">
+      <label for="loliFunctionExpression">Expression</label><textarea id="loliFunctionExpression" required rows="5" spellcheck="false" placeholder="round(amount * (1 - discount / 100), 2)"></textarea>
+      <p class="chart-help">Use parameter names, JSON fields and Loli operators/functions. JavaScript statements and arbitrary code are not supported.</p>
+      <p id="loliFunctionError" class="chart-error" role="alert"></p>
+      <div class="loli-function-actions"><button type="button" id="loliFunctionDelete" class="library-button" disabled>Delete</button><button type="submit" class="library-button primary">Save function</button></div>
+    </form>
+  </div>
 </dialog>
 <dialog id="chartDialog" class="chart-dialog" aria-labelledby="chartDialogTitle">
   <form id="chartForm">
@@ -323,6 +358,8 @@
 <script src="vendor/html2canvas.min.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/marked.min.js"></script>
+<script src="vendor/handlebars.min.js"></script>
+<script src="src/handlebars-formatters.js"></script>
 <script src="src/state.js"></script>
 <script src="src/assets.js"></script>
 <script src="src/columns.js"></script>
@@ -332,6 +369,7 @@
 <script src="src/layout.js"></script>
 <script src="src/search.js"></script>
 <script src="src/storage.js"></script>
+<script src="src/data.js"></script>
 <script src="src/editor.js"></script>
 <script src="src/view.js"></script>
 <script src="src/chart-model.js"></script>

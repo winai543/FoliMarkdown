@@ -54,6 +54,8 @@ cargo test --locked --manifest-path src-tauri/Cargo.toml
 
 For complete usage, options, and API examples in Thai, see the [CLI guide](docs/cli.md).
 
+The CLI also supports Handlebars `.hbs` report templates bound to JSON data for repeatable reports from other systems. See the [monthly report example](examples/monthly-report.hbs).
+
 The CLI converts the same Markdown extensions that FoliMarkdown renders, including columns, floating content, tables, page breaks, images, and Mermaid diagrams/charts. It runs the app's DOCX and PDF exporters in headless Chrome/Chromium. Install Node.js 22.12+ and Chrome/Chromium, then run:
 
 ```sh
@@ -179,6 +181,14 @@ File associations apply to installed desktop builds; the browser demo does not r
 Choose **File → Templates** or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
 
 Built-in templates include **Resume**, **Invoice**, **Meeting agenda**, **Project proposal**, **Daily schedule**, **Lesson plan**, **Student certificate**, **Wedding invitation**, and **Travel itinerary**. Replace the sample text and bracketed placeholders with your details. Invoice amounts and proposal budgets are examples; update totals manually. Certificates use landscape paper; invitations and certificates omit running headers, footers, and page numbers.
+
+Built-in templates keep Handlebars bindings such as `{{invoice.number}}` in the Markdown document. Open the **Data** tab and click **Bind data** to open the JSON modal. It generates a skeleton from nested fields and `{{#each}}` lists; enter values and click **Apply data** to update the preview while keeping the Markdown source unchanged. Click **Reset preview** to show the original template again. The CLI and API can bind JSON data to Markdown templates for automated reports; see the [CLI guide](docs/cli.md).
+
+Handlebars templates also support spreadsheet-style numeric formulas, for example `{{multiply quantity unitPrice}}` and `{{formatCurrency (add subtotal tax) "THB"}}`. See the [formula and formatting helper guide](docs/cli.md#จัดรูปแบบค่าด้วย-helpers).
+
+For JavaScript-style expressions, use Loli Script inside a Handlebars expression, such as `{{loli "round(totals.revenue / totals.units, 2)"}}`. The [monthly report template](examples/monthly-report.hbs) includes this example.
+
+Create reusable Loli functions from **Data → Functions** by entering a function name, parameters, and an expression. For example, define `netAmount` with parameters `amount, discount` and expression `round(amount * (1 - discount / 100), 2)`, then call it in a template with `{{loli "netAmount(invoice.subtotal, invoice.discount)"}}`. The function library is saved on this device and can be reused across documents.
 
 Templates work offline, remain standard Markdown, and support the existing Markdown, HTML, DOCX, PDF, and print exports.
 

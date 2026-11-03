@@ -1,0 +1,20 @@
+{
+  "period": "October 2026",
+  "organization": {
+    "name": "Example Company"
+  },
+  "preparedBy": "Operations team",
+  "executiveSummary": "Revenue increased this month, led by Product A.",
+  "products": [
+    { "name": "Product A", "units": 120, "revenue": 240000 },
+    { "name": "Product B", "units": 85, "revenue": 127500 }
+  ],
+  "totals": {
+    "units": 205,
+    "revenue": 367500
+  },
+  "notes": [
+    "Figures are based on confirmed orders.",
+    "Amounts are shown in Thai baht."
+  ]
+}

@@ -17,6 +17,7 @@
     "test": "npm run check && node tests/smoke.cjs && node tests/chart-editor.cjs && node tests/diagram-editor.cjs && node tests/table-editor.cjs && node tests/image-paths.cjs && node tests/templates.cjs && node tests/columns.cjs && node tests/absolute.cjs && node tests/file-associations.cjs"
   },
   "dependencies": {
+    "handlebars": "^4.7.10",
     "puppeteer": "^25.16.0"
   },
   "devDependencies": {

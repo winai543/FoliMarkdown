@@ -1,0 +1,29 @@
+# Monthly report: {{period}}
+
+**Organization:** {{organization.name}}  
+**Prepared by:** {{preparedBy}}
+
+{{#if executiveSummary}}
+## Executive summary
+
+{{executiveSummary}}
+{{/if}}
+
+## Results
+
+| Product | Units | Revenue |
+| --- | ---: | ---: |
+{{#each products}}
+| {{name}} | {{formatNumber units locale="en-US"}} | {{formatCurrency revenue "THB" "th-TH"}} |
+{{/each}}
+| **Total** | **{{formatNumber totals.units locale="en-US"}}** | **{{formatCurrency totals.revenue "THB" "th-TH"}}** |
+
+**Average revenue per unit:** {{loli "round(totals.revenue / totals.units, 2)"}} THB
+
+{{#if notes}}
+## Notes
+
+{{#each notes}}
+- {{this}}
+{{/each}}
+{{/if}}

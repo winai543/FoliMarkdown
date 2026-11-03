@@ -5,19 +5,22 @@ const path = require("node:path");
 const os = require("node:os");
 const http = require("node:http");
 const { randomUUID, timingSafeEqual } = require("node:crypto");
+const Handlebars = require("handlebars");
+require("../src/handlebars-formatters.js")(Handlebars);
 
 const root = path.resolve(__dirname, "..");
 const fonts = ["system", "Sarabun", "Prompt", "Kanit", "Noto Sans Thai", "Noto Serif Thai", "IBM Plex Sans Thai"];
 const mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", avif: "image/avif" };
-const help = `Usage: folimarkdown <input.md> [options]
+const help = `Usage: folimarkdown <input.md|template.hbs> [options]
        folimarkdown serve [server options]
 
-Convert FoliMarkdown documents to DOCX and PDF. Both formats are created by default.
+Convert Markdown or Handlebars report templates to DOCX and PDF. Both formats are created by default.
 
 Options:
   -f, --format <docx|pdf|both>     Output format (default: both)
   -o, --output <file>             Output file; requires one format
       --out-dir <directory>       Output directory (default: input directory)
+      --data <file.json>          Bind JSON data to a Markdown or .hbs template
       --title <text>              Document title and {title} value
       --paper <a4|letter>         Paper size
       --orientation <portrait|landscape>
@@ -50,6 +53,7 @@ Examples:
   folimarkdown resume.md
   folimarkdown invoice.md --format pdf --paper letter --footer "Page {page} of {pages}"
   folimarkdown report.md --format docx --output report-final.docx --no-page-numbers
+  folimarkdown examples/monthly-report.hbs --data examples/monthly-report.json
   folimarkdown serve --port 3000
 `;
 
@@ -69,6 +73,16 @@ function validateLayout(value) {
     Object.defineProperty(layout, key, { value: field, enumerable: true, writable: true });
   }
   return layout;
+}
+
+function renderReportTemplate(source, data) {
+  if (typeof source !== "string" || source.length > 1_000_000) throw new Error("Template must be text under 1 MB");
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Template data must be a JSON object");
+  try {
+    return Handlebars.compile(source, { noEscape: false })(data);
+  } catch (error) {
+    throw new Error(`Handlebars template error: ${error.message}`);
+  }
 }
 
 function parseServerArgs(args) {
@@ -115,7 +129,7 @@ function parseArgs(args) {
     if (arg === "--no-footer") { options.layout.footer = ""; continue; }
     const key = {
       "-f": "format", "--format": "format", "-o": "output", "--output": "output",
-      "--out-dir": "outDir", "--title": "title", "--paper": "paperSize",
+      "--out-dir": "outDir", "--data": "data", "--title": "title", "--paper": "paperSize",
       "--orientation": "orientation", "--margin": "margin", "--header": "header",
       "--footer": "footer", "--font": "font", "--chrome": "chrome", "--timeout": "timeout"
     }[arg];
@@ -128,7 +142,9 @@ function parseArgs(args) {
     else options.input = arg;
   }
   if (options.help) return options;
-  if (!options.input) throw new Error("Provide an input Markdown file");
+  if (!options.input) throw new Error("Provide an input Markdown or .hbs template file");
+  const isTemplate = /\.hbs$/i.test(options.input);
+  if (isTemplate && !options.data) throw new Error("An .hbs template requires --data <file.json>");
   if (!["docx", "pdf", "both"].includes(options.format)) throw new Error("--format must be docx, pdf, or both");
   if (options.output && options.format === "both") throw new Error("--output requires --format docx or --format pdf");
   if (options.output && options.outDir) throw new Error("Use either --output or --out-dir");
@@ -259,8 +275,14 @@ async function renderDocument({ browser, server, markdown, title, layoutOverride
 
 async function convert(options) {
   const input = path.resolve(options.input);
-  if (!/\.(md|markdown|txt)$/i.test(input)) throw new Error("Input must be a .md, .markdown, or .txt file");
-  const markdown = await fs.readFile(input, "utf8");
+  if (!/\.(md|markdown|txt|hbs)$/i.test(input)) throw new Error("Input must be a .md, .markdown, .txt, or .hbs file");
+  let markdown = await fs.readFile(input, "utf8");
+  if (options.data) {
+    let data;
+    try { data = JSON.parse(await fs.readFile(path.resolve(options.data), "utf8")); }
+    catch (error) { throw new Error(`Could not read template data JSON: ${error.message}`); }
+    markdown = renderReportTemplate(markdown, data);
+  }
   const basename = path.parse(input).name;
   const title = options.title === undefined ? basename : options.title;
   const formats = options.format === "both" ? ["docx", "pdf"] : [options.format];
@@ -395,7 +417,18 @@ async function serve(options) {
         try {
           const body = await readJson(request, options.maxInputMb * 1024 * 1024);
           if (!body || typeof body !== "object" || Array.isArray(body)) throw new ApiError(400, "JSON body must be an object");
-          if (typeof body.markdown !== "string") throw new ApiError(400, "markdown must be a string");
+          const hasMarkdown = Object.hasOwn(body, "markdown");
+          const hasTemplate = Object.hasOwn(body, "template");
+          if (hasMarkdown === hasTemplate) throw new ApiError(400, "Provide exactly one of markdown or template");
+          if (hasMarkdown && typeof body.markdown !== "string") throw new ApiError(400, "markdown must be a string");
+          if (hasTemplate && typeof body.template !== "string") throw new ApiError(400, "template must be a string");
+          let markdown = body.markdown;
+          if (hasTemplate || body.data !== undefined) {
+            if (!body.data || typeof body.data !== "object" || Array.isArray(body.data))
+              throw new ApiError(400, "data must be a JSON object when binding a template");
+            try { markdown = renderReportTemplate(hasTemplate ? body.template : body.markdown, body.data); }
+            catch (error) { throw new ApiError(400, error.message); }
+          }
           const format = body.format || "pdf";
           if (!["docx", "pdf", "both"].includes(format)) throw new ApiError(400, "format must be docx, pdf, or both");
           if (body.title !== undefined && (typeof body.title !== "string" || body.title.length > 200)) throw new ApiError(400, "title must be text under 200 characters");
@@ -405,7 +438,7 @@ async function serve(options) {
           catch (error) { throw new ApiError(400, error.message); }
           const attachments = apiImages(body.images);
           const filename = safeFilename(body.filename || body.title);
-          const outputs = await renderDocument({ browser, server: assetServer, markdown: body.markdown,
+          const outputs = await renderDocument({ browser, server: assetServer, markdown,
             title: body.title || "Document", layoutOverrides, formats: [format], timeout: options.timeout, filename,
             resolveImages: async refs => refs.map(reference => imageFromApi(reference, attachments[reference], [format])) });
           const bytes = outputs[0].bytes;

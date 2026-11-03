@@ -41,6 +41,7 @@
     editor.style.height = Math.max(sourceWrap.clientHeight - 70, editor.scrollHeight) + "px";
   }
   function update(forceHistory = false) {
+    updateDataBindingSource(editor.value);
     recordHistory(forceHistory);
     render();
     scheduleSave();

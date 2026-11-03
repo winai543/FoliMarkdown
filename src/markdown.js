@@ -102,7 +102,9 @@
     return { html, headings: markdownContext.headings, diagramKeys: markdownContext.diagramKeys };
   }
   function render() {
-    const result = renderMarkdown(editor.value);
+    const previewSource = previewMarkdownSource(editor.value);
+    const result = renderMarkdown(previewSource);
+    document.body.classList.toggle("data-preview-active", previewSource !== editor.value);
     lastRenderedHtml = result.html || '<div class="empty-preview"><span class="empty-symbol">▤</span>Start typing Markdown to create a document</div>';
     activeDiagramKeys = new Set(result.diagramKeys);
     for (const key of diagramCache.keys()) if (!activeDiagramKeys.has(key)) diagramCache.delete(key);

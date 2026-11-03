@@ -1,0 +1,30 @@
+{
+  "invoice": {
+    "number": "INV-2026-042",
+    "issuedAt": "2026-11-03",
+    "dueAt": "2026-11-17",
+    "currency": "THB",
+    "subtotal": "500.00",
+    "taxLabel": "VAT 7%",
+    "taxAmount": "35.00",
+    "total": "535.00"
+  },
+  "seller": {
+    "name": "Northstar Studio",
+    "address": "99 Sathorn Road, Bangkok 10120",
+    "email": "billing@northstar.example",
+    "phone": "+66 2 123 4567"
+  },
+  "client": {
+    "name": "Lumen Labs",
+    "address": "42 Sukhumvit Road, Bangkok 10110",
+    "email": "accounts@lumen.example"
+  },
+  "items": [
+    { "description": "Design services", "quantity": 8, "unitPrice": "50.00", "amount": "400.00" },
+    { "description": "Project setup", "quantity": 1, "unitPrice": "100.00", "amount": "100.00" }
+  ],
+  "fields": {
+    "payment_details": "Siam Commercial Bank · Account ending 5678"
+  }
+}

@@ -76,6 +76,117 @@ const DOCUMENT_TEMPLATES = [
   }
 ];
 
+// Keep Handlebars bindings in the Markdown so callers can provide data later.
+const TEMPLATE_REPEATERS = {
+  invoice: {
+    source: `| Design services | 8 | 50.00 | 400.00 |\n| Project setup | 1 | 100.00 | 100.00 |`,
+    replacement: `{{#each items}}\n| {{description}} | {{formatNumber quantity maximumFractionDigits=0}} | {{formatCurrency unitPrice ../invoice.currency locale="th-TH"}} | {{formatCurrency (multiply quantity unitPrice) ../invoice.currency locale="th-TH"}} |\n{{/each}}`,
+    data: { items: [
+      { description: 'Design services', quantity: 8, unitPrice: '50.00', amount: '400.00' },
+      { description: 'Project setup', quantity: 1, unitPrice: '100.00', amount: '100.00' }
+    ] }
+  },
+  'meeting-agenda': {
+    source: `| 09:00–09:05 | Welcome and goals | Facilitator | Agree on priorities |\n| 09:05–09:20 | Progress review | Project lead | Identify blockers |\n| 09:20–09:40 | Discussion and decisions | Team | Choose next steps |\n| 09:40–09:45 | Actions and recap | Facilitator | Confirm owners |`,
+    replacement: `{{#each agenda}}\n| {{time}} | {{topic}} | {{lead}} | {{outcome}} |\n{{/each}}`,
+    data: { agenda: [
+      { time: '09:00–09:05', topic: 'Welcome and goals', lead: 'Facilitator', outcome: 'Agree on priorities' },
+      { time: '09:05–09:20', topic: 'Progress review', lead: 'Project lead', outcome: 'Identify blockers' },
+      { time: '09:20–09:40', topic: 'Discussion and decisions', lead: 'Team', outcome: 'Choose next steps' },
+      { time: '09:40–09:45', topic: 'Actions and recap', lead: 'Facilitator', outcome: 'Confirm owners' }
+    ] }
+  },
+  'project-proposal': {
+    source: `| Discovery report | Requirements and research | Sponsor approves findings |\n| Initial solution | Working draft or prototype | Agreed features demonstrated |\n| Final delivery | Completed solution and handover | Acceptance checklist signed |`,
+    replacement: `{{#each deliverables}}\n| {{name}} | {{description}} | {{acceptance}} |\n{{/each}}`,
+    data: { deliverables: [
+      { name: 'Discovery report', description: 'Requirements and research', acceptance: 'Sponsor approves findings' },
+      { name: 'Initial solution', description: 'Working draft or prototype', acceptance: 'Agreed features demonstrated' },
+      { name: 'Final delivery', description: 'Completed solution and handover', acceptance: 'Acceptance checklist signed' }
+    ] }
+  },
+  'daily-schedule': {
+    source: `| 07:00–08:00 | Morning routine | Breakfast and preparation |\n| 08:00–08:30 | Plan the day | Review priorities |\n| 08:30–10:30 | Focus work | Most important task |\n| 10:30–10:45 | Break | Stretch and recharge |\n| 10:45–12:00 | Project work | Continue key deliverable |\n| 12:00–13:00 | Lunch | Step away from work |\n| 13:00–14:30 | Meetings / Collaboration | Prepare questions |\n| 14:30–14:45 | Break | Short walk |\n| 14:45–16:30 | Focus work | Complete remaining tasks |\n| 16:30–17:00 | Review and wrap-up | Plan tomorrow |`,
+    replacement: `{{#each timeBlocks}}\n| {{time}} | {{activity}} | {{notes}} |\n{{/each}}`,
+    data: { timeBlocks: [
+      { time: '07:00–08:00', activity: 'Morning routine', notes: 'Breakfast and preparation' },
+      { time: '08:00–08:30', activity: 'Plan the day', notes: 'Review priorities' },
+      { time: '08:30–10:30', activity: 'Focus work', notes: 'Most important task' },
+      { time: '10:30–10:45', activity: 'Break', notes: 'Stretch and recharge' },
+      { time: '10:45–12:00', activity: 'Project work', notes: 'Continue key deliverable' },
+      { time: '12:00–13:00', activity: 'Lunch', notes: 'Step away from work' },
+      { time: '13:00–14:30', activity: 'Meetings / Collaboration', notes: 'Prepare questions' },
+      { time: '14:30–14:45', activity: 'Break', notes: 'Short walk' },
+      { time: '14:45–16:30', activity: 'Focus work', notes: 'Complete remaining tasks' },
+      { time: '16:30–17:00', activity: 'Review and wrap-up', notes: 'Plan tomorrow' }
+    ] }
+  },
+  'lesson-plan': {
+    source: `| 0–5 min | Starter | Ask an opening question | Recall prior knowledge |\n| 5–20 min | Explain and model | Introduce concept and example | Listen, ask, and take notes |\n| 20–40 min | Guided practice | Support groups and give feedback | Work on practice task |\n| 40–55 min | Independent practice | Observe and assess | Apply the skill independently |\n| 55–60 min | Review / Exit ticket | Summarize and check understanding | Share one learning and one question |`,
+    replacement: `{{#each sequence}}\n| {{time}} | {{activity}} | {{teacherActions}} | {{studentActions}} |\n{{/each}}`,
+    data: { sequence: [
+      { time: '0–5 min', activity: 'Starter', teacherActions: 'Ask an opening question', studentActions: 'Recall prior knowledge' },
+      { time: '5–20 min', activity: 'Explain and model', teacherActions: 'Introduce concept and example', studentActions: 'Listen, ask, and take notes' },
+      { time: '20–40 min', activity: 'Guided practice', teacherActions: 'Support groups and give feedback', studentActions: 'Work on practice task' },
+      { time: '40–55 min', activity: 'Independent practice', teacherActions: 'Observe and assess', studentActions: 'Apply the skill independently' },
+      { time: '55–60 min', activity: 'Review / Exit ticket', teacherActions: 'Summarize and check understanding', studentActions: 'Share one learning and one question' }
+    ] }
+  }
+};
+
+const TEMPLATE_TEXT_BINDINGS = {
+  resume: [
+    ['Your Name', '{{person.name}}'], ['Job title / Professional specialty', '{{person.title}}'],
+    ['name@example.com', '{{person.email}}'], ['+00 000 000 0000', '{{person.phone}}'],
+    ['City, Country', '{{person.location}}'], ['https://example.com', '{{person.portfolio}}']
+  ],
+  invoice: [
+    ['INV-001', '{{invoice.number}}'], ['Your Business Name', '{{seller.name}}'],
+    ['billing@example.com', '{{seller.email}}'], ['Client / Company Name', '{{client.name}}'],
+    ['**Issued:** [Date]  \n**Due:** [Date]  \n**Currency:** [Currency code]', '**Issued:** {{formatDate invoice.issuedAt style="long" locale="en-GB"}}  \n**Due:** {{formatDate invoice.dueAt style="long" locale="en-GB"}}  \n**Currency:** {{invoice.currency}}'],
+    ['Street address, City, Postal code', '{{seller.address}}'],
+    ['Email: {{seller.email}} · Phone: [Phone]', 'Email: {{seller.email}} · Phone: {{seller.phone}}'],
+    ['**{{client.name}}**  \nBilling address  \nContact email', '**{{client.name}}**  \n{{client.address}}  \n{{client.email}}'],
+    ['| Subtotal | 500.00 |', '| Subtotal | {{formatCurrency invoice.subtotal invoice.currency locale="th-TH"}} |'],
+    ['| Tax (0% — replace as applicable) | 0.00 |', '| Tax ({{invoice.taxLabel}}) | {{formatCurrency invoice.taxAmount invoice.currency locale="th-TH"}} |'],
+    ['| **Total due** | **500.00** |', '| **Total due** | **{{formatCurrency (add invoice.subtotal invoice.taxAmount) invoice.currency locale="th-TH"}}** |'],
+    ['*Sample amounts only. Update quantities, totals, currency, and tax details before sending. Totals are entered manually.*', '*Replace the sample invoice data before sending.*']
+  ],
+  'meeting-agenda': [
+    ['Meeting Agenda', '{{meeting.title}}'],
+    ['**Meeting:** [Project / Team name]  \n**Date and time:** [Date, start – end, time zone]  \n**Location / Call link:** [Location or URL]  \n**Facilitator:** [Name] · **Notes:** [Name]',
+      '**Meeting:** {{meeting.projectTeam}}  \n**Date and time:** {{meeting.dateTime}}  \n**Location / Call link:** {{meeting.location}}  \n**Facilitator:** {{meeting.facilitator}} · **Notes:** {{meeting.noteTaker}}'],
+    ['State the decision or outcome this meeting should achieve.', '{{meeting.objective}}'],
+    ['- [Name — Role]\n- [Name — Role]', '{{#each meeting.attendees}}\n- {{name}} — {{role}}\n{{/each}}'],
+    ['- [Decision and reasoning]', '{{#each meeting.decisions}}\n- {{this}}\n{{/each}}'],
+    ['| [Task] | [Name] | [Date] | Open |', '{{#each meeting.actions}}\n| {{task}} | {{owner}} | {{dueDate}} | {{status}} |\n{{/each}}'],
+    ['[Date, time, and proposed focus]', '{{meeting.nextMeeting}}']
+  ],
+  'project-proposal': [['Project Proposal', '{{proposal.title}}']],
+  'daily-schedule': [['Daily Schedule', '{{schedule.title}}']],
+  'lesson-plan': [['Lesson Plan', '{{lesson.title}}']],
+  'student-certificate': [['Certificate of Achievement', '{{certificate.title}}']],
+  'wedding-invitation': [['Together with their families', '{{wedding.heading}}']],
+  itinerary: [['Travel Itinerary', '{{trip.title}}']]
+};
+
+for (const template of DOCUMENT_TEMPLATES) {
+  let source = template.text;
+  for (const [before, after] of TEMPLATE_TEXT_BINDINGS[template.id] || []) source = source.replaceAll(before, after);
+  const repeater = TEMPLATE_REPEATERS[template.id];
+  if (repeater) source = source.replace(repeater.source, repeater.replacement);
+  source = source.replace(/\[([^\]\r\n]+)\]/g, (placeholder, label, offset, original) => {
+    const before = original.slice(Math.max(0, offset - 20), offset);
+    if (original[offset - 1] === '!' || original[offset + placeholder.length] === '(' || /:::\s*(?:col|absolute)\s*$/.test(before)) return placeholder;
+    if (!label.trim()) return placeholder;
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'value';
+    const key = /^[a-z_]/.test(slug) ? slug : `value_${slug}`;
+    return `{{fields.${key}}}`;
+  });
+  template.source = source;
+  template.text = source;
+}
+
 let selectedDocumentTemplate = null;
 function selectDocumentTemplate(id) {
   const template = DOCUMENT_TEMPLATES.find(item => item.id === id);

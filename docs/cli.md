@@ -1,6 +1,8 @@
 # คู่มือใช้งาน FoliMarkdown CLI
 
-CLI ใช้ตัวเรนเดอร์และตัวส่งออกเดียวกับ FoliMarkdown เพื่อแปลง Markdown เป็น DOCX และ PDF รวมถึงเปิดเป็น HTTP API สำหรับโปรแกรมอื่นเรียกใช้ได้ รองรับตาราง แผนภูมิ Mermaid, `::: row` / `::: col`, `::: absolute`, รูปภาพ และการขึ้นหน้าใหม่ตามที่แอปรองรับ
+CLI ใช้ตัวเรนเดอร์และตัวส่งออกเดียวกับ FoliMarkdown เพื่อแปลง Markdown เป็น DOCX และ PDF รวมถึงเปิดเป็น HTTP API สำหรับโปรแกรมอื่นเรียกใช้ได้ นอกจากนี้ยังใช้ Handlebars ผูกข้อมูล JSON เข้ากับ Markdown template เพื่อสร้างรายงานซ้ำจากระบบอื่นได้ รองรับตาราง แผนภูมิ Mermaid, `::: row` / `::: col`, `::: absolute`, รูปภาพ และการขึ้นหน้าใหม่ตามที่แอปรองรับ
+
+ในแอป เมื่อเปิดเอกสารที่มี `{{field}}` ให้เลือกแท็บ **Data** แล้วกด **Bind data** เพื่อเปิด modal ระบบจะสร้าง JSON skeleton จาก field แบบซ้อนและรายการ `{{#each ...}}` (พร้อม object ตัวอย่างหนึ่งแถว) ให้ กรอกค่าแล้วกด **Apply data** เพื่ออัปเดตเฉพาะ preview โดยไม่เปลี่ยน Markdown ต้นฉบับ กด **Reset preview** เพื่อกลับไปดู template เดิม ส่วน CLI/API ใช้ `data` bind template เพื่อสร้างไฟล์ผลลัพธ์
 
 ## เตรียมเครื่อง
 
@@ -78,6 +80,93 @@ folimarkdown invitation.md --format docx --title 'คำเชิญ' \
 
 ควรครอบข้อความที่มีช่องว่างหรือ `{...}` ด้วยเครื่องหมาย quote เพื่อให้ shell ส่งค่าไปครบ
 
+## สร้างรายงานจาก Handlebars template
+
+ไฟล์ `.md` ที่ได้จากเทมเพลตในแอปเก็บ `{{...}}` ไว้สำหรับ bind ภายหลัง ส่ง Markdown และ JSON ด้วย `--data`:
+
+```sh
+folimarkdown invoice.md \
+  --data examples/invoice-data.json \
+  --format pdf --out-dir exports --title 'Invoice INV-2026-042'
+```
+
+ในแอปให้เลือก **Create document** แล้วใช้ **Download Markdown** เพื่อบันทึก source ที่มี `{{...}}`; จากนั้นส่งไฟล์นั้นกับ JSON เข้า CLI หรือ API เมื่อพร้อมสร้างรายงานจริง
+
+ดู data schema ตัวอย่างของ Invoice ได้ที่ [`examples/invoice-data.json`](../examples/invoice-data.json) ชื่อ field ใน JSON ต้องตรงกับ binding ใน Markdown เช่น `{{invoice.number}}` หรือรายการ `{{#each items}}...{{/each}}`
+
+หรือใช้ไฟล์ `.hbs` แยกต่างหาก:
+
+```sh
+folimarkdown examples/monthly-report.hbs \
+  --data examples/monthly-report.json \
+  --format pdf --out-dir exports --title 'Monthly report'
+```
+
+ตัวอย่างเต็มอยู่ใน [`examples/monthly-report.hbs`](../examples/monthly-report.hbs) และ [`examples/monthly-report.json`](../examples/monthly-report.json) ใช้ไวยากรณ์ Handlebars มาตรฐาน เช่น `{{field}}`, `{{#if condition}}...{{/if}}`, `{{#each rows}}...{{/each}}` และ field แบบซ้อน `{{customer.name}}` ระบบจะ render template เป็น Markdown ก่อนอ่าน page settings และส่งออกเอกสาร
+
+- `{{value}}` จะใช้ HTML escaping ตามค่าเริ่มต้นของ Handlebars ส่วน `{{{value}}}` จะใส่ค่าตามเดิม ใช้ triple braces เฉพาะกับเนื้อหาที่เชื่อถือได้และต้องการ Markdown/HTML ที่เขียนไว้แล้ว
+- ส่งตัวเลขเป็น JSON number หรือข้อความตัวเลข และส่งวันเวลาเป็น ISO 8601 แล้วใช้ formatting helpers ควบคุมรูปแบบที่แสดงในรายงาน
+- ไฟล์รูปสัมพัทธ์ใน Markdown อ้างจากโฟลเดอร์ของไฟล์ `.hbs`; ข้อมูล JSON ที่ส่งผ่าน `--data` อ้าง path จาก working directory ที่รันคำสั่ง
+- `.hbs` ต้องใช้คู่กับ `--data <file.json>`; ไฟล์ `.md`, `.markdown` และ `.txt` ใช้ `--data` ได้เมื่อต้องการ bind Handlebars ด้วย JSON ชั้นบนสุดต้องเป็น object
+- เทมเพลตในแอปยังคง `{{...}}` ใน Markdown ที่บันทึกไว้ ถ้าส่งออก PDF/DOCX จากแอปโดยตรงก่อน bind จะเห็น expression เหล่านี้ตามตัวอักษร ให้ใช้ CLI/API พร้อม JSON ก่อนสร้างเอกสารฉบับสุดท้าย
+
+### จัดรูปแบบค่าด้วย helpers
+
+ใช้ formatting helpers กับ field ได้โดยตรงใน template; ใช้ได้ทั้งแท็บ **Data**, CLI และ API:
+
+```hbs
+{{formatNumber quantity minimumFractionDigits=0}}
+{{formatCurrency total "THB" "th-TH"}}
+{{formatDate issuedAt style="long" locale="th-TH" timeZone="Asia/Bangkok"}}
+{{formatTime startsAt style="short" locale="th-TH" timeZone="Asia/Bangkok"}}
+{{formatPercent completion maximumFractionDigits=1}}
+{{uppercase customer.name}}
+{{join tags ", "}}
+{{multiply quantity unitPrice}}
+{{formatCurrency (add subtotal tax) "THB" locale="th-TH"}}
+{{formatNumber (average scores) maximumFractionDigits=1}}
+{{loli "round(totals.revenue / totals.units, 2)"}}
+```
+
+มี helper สำหรับสูตร `add`, `sum`, `subtract`, `multiply`, `divide`, `average`, `min`, `max`, `round`, `ceil`, `floor`, `abs`, `power`, `mod` และ `percent` ซึ่งรับตัวเลขหลายค่าได้ เช่น `{{multiply quantity unitPrice}}` หรือ `{{formatCurrency (add subtotal tax) "THB" locale="th-TH"}}`; `sum` และ `average` รับ array ได้ด้วย ส่วน `percent amount rate` คำนวณ amount × rate ÷ 100 ใช้สูตรซ้อนในวงเล็บเพื่อส่งผลคำนวณเข้า formatter ได้
+
+**Loli Script** เป็น JavaScript expression แบบย่อ เรียกจาก Handlebars ด้วย `{{loli "expression"}}` เช่น `{{loli "round(totals.revenue / totals.units, 2)"}}` รองรับการอ้าง field แบบ dot path, วงเล็บ, ตัวดำเนินการ `+ - * / % **`, เปรียบเทียบ, `&&` / `||` และฟังก์ชันคำนวณ `abs`, `ceil`, `floor`, `round`, `min`, `max`, `sum`, `average`, `percent` โดยไม่รองรับคำสั่งหรือการเรียก JavaScript ทั่วไป ตัวอย่างใน [`examples/monthly-report.hbs`](../examples/monthly-report.hbs) แสดงรายได้เฉลี่ยต่อหน่วย
+
+ในแอป เลือก **Data → Functions** เพื่อสร้าง reusable function จากชื่อ พารามิเตอร์ และ expression เช่น ชื่อ `netAmount`, พารามิเตอร์ `amount, discount`, expression `round(amount * (1 - discount / 100), 2)` แล้วเรียกใน template ด้วย `{{loli "netAmount(invoice.subtotal, invoice.discount)"}}` รายการ function บันทึกไว้ในเครื่องและใช้ซ้ำได้กับเอกสารในแอป; CLI/API รองรับ Loli built-in functions แต่ไม่ได้อ่าน function library ในเครื่อง
+
+format helpers ได้แก่ `formatNumber`, `formatCurrency`, `formatDate`, `formatTime`, `formatPercent`, `uppercase`, `lowercase`, `capitalize`, `join`, `default` และ helper แบบรวม `format value "number|currency|date|time|percent"` ค่า locale ใช้รูปแบบ BCP 47 เช่น `en-US` หรือ `th-TH`; วันเวลาควรส่งเป็น ISO 8601 เพื่อให้ตีความได้แน่นอน `formatDate` รองรับ style `short`, `medium`, `long`, `full` ส่วน number/currency รองรับตัวเลือกของ `Intl.NumberFormat` เช่น `minimumFractionDigits` และ `maximumFractionDigits`
+
+### ใช้ template ผ่าน HTTP API
+
+เรียก `POST /convert` ด้วย Markdown ที่ export จากแอปและ `data` เพื่อ bind ค่า หรือส่ง `template` และ `data` โดยตรง:
+
+```json
+{
+  "template": "# รายงาน {{period}}\n\n{{#each rows}}\n- {{name}}: {{amount}}\n{{/each}}",
+  "data": {
+    "period": "ตุลาคม 2026",
+    "rows": [
+      { "name": "Product A", "amount": "฿240,000" },
+      { "name": "Product B", "amount": "฿127,500" }
+    ]
+  },
+  "format": "pdf",
+  "title": "รายงานยอดขาย",
+  "filename": "sales-october",
+  "layout": {
+    "paperSize": "a4",
+    "orientation": "portrait",
+    "margin": "normal",
+    "font": "Sarabun",
+    "header": "{title}",
+    "footer": "หน้า {page} / {pages}",
+    "pageNumbers": true
+  }
+}
+```
+
+บันทึก JSON ข้างต้นเป็น `request.json` แล้วส่งด้วยคำสั่ง `curl` ในหัวข้อ [ส่งคำขอแปลงไฟล์](#ส่งคำขอแปลงไฟล์) ระบบรับ `template` เป็น source string ทุก request ดังนั้นระบบเรียก API สามารถเก็บ template ไว้ในไฟล์หรือฐานข้อมูลของตัวเองแล้วส่งพร้อม data แต่ละครั้ง ต้องส่ง `template` กับ `data` เป็นคู่ และห้ามส่ง `markdown` พร้อมกัน
+
 ### Markdown และรูปภาพ
 
 - รูปที่อ้างด้วย path สัมพัทธ์ เช่น `![Photo](images/photo.png)` จะค้นหาจากโฟลเดอร์ของไฟล์ Markdown รองรับ PNG, JPEG, GIF, WebP และ AVIF
@@ -140,12 +229,16 @@ curl -fS http://127.0.0.1:3000/convert \
 
 | ฟิลด์ JSON | ความหมาย |
 | --- | --- |
-| `markdown` | **จำเป็น**; เนื้อหา Markdown เป็น string |
+| `markdown` | เนื้อหา Markdown เป็น string; bind กับ `data` ได้ |
+| `template` | source ของ Handlebars template ที่สร้าง Markdown; ใช้แทน `markdown` และต้องส่งคู่กับ `data` |
+| `data` | JSON object สำหรับ bind กับ `markdown` หรือ `template` |
 | `format` | `pdf` (ค่าเริ่มต้น), `docx` หรือ `both` |
 | `title` | ชื่อเอกสารและค่า `{title}` |
 | `filename` | ชื่อไฟล์ใน header ของ response; เซิร์ฟเวอร์ปรับให้เป็นชื่อไฟล์ที่ปลอดภัย |
 | `layout` | object ของการตั้งค่าหน้ากระดาษตามตัวอย่าง; ทับเฉพาะค่าที่ระบุ |
 | `images` | object ที่จับคู่ path รูปใน Markdown กับ data URL หรือข้อมูล base64 |
+
+ต้องส่งอย่างใดอย่างหนึ่งระหว่าง `markdown` หรือ `template`; ส่ง `data` เมื่อมี Handlebars ที่ต้อง bind API จำกัด source ไว้ 1 MB และขนาด request รวมยังอยู่ภายใต้ `--max-input-mb`
 
 หาก Markdown มี `![Photo](images/photo.png)` ให้ส่งรูปพร้อมคำขอ ตัวอย่างส่วนที่เพิ่มใน JSON:
 
