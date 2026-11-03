@@ -4,6 +4,7 @@
     history = [editor.value];
     historyIndex = 0;
     lastHistoryAt = 0;
+    syncHistoryTools();
     $("#search").value = "";
     currentNav = "outline";
     document.querySelectorAll("[data-nav]").forEach(tab => tab.classList.toggle("active", tab.dataset.nav === "outline"));

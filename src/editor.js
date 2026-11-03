@@ -18,10 +18,14 @@
     button.replaceChildren(svg);
     button.classList.add('editor-icon-button');
   }
+  function syncHistoryTools() {
+    document.querySelectorAll('[data-action="undo"]').forEach(button => button.disabled = historyIndex <= 0);
+    document.querySelectorAll('[data-action="redo"]').forEach(button => button.disabled = historyIndex >= history.length - 1);
+  }
   function recordHistory(force = false) {
     const now = Date.now();
     const state = editor.value;
-    if (history[historyIndex] === state) return;
+    if (history[historyIndex] === state) { syncHistoryTools(); return; }
     if (!force && now - lastHistoryAt < 750 && historyIndex > 0 && historyIndex === history.length - 1) history[historyIndex] = state;
     else {
       history = history.slice(0, historyIndex + 1);
@@ -30,6 +34,7 @@
       historyIndex = history.length - 1;
     }
     lastHistoryAt = force ? 0 : now;
+    syncHistoryTools();
   }
   function refreshEditorHeight() {
     editor.style.height = "auto";

@@ -135,7 +135,6 @@ function initializeDocumentTemplates() {
     button.addEventListener('click', () => selectDocumentTemplate(template.id));
     $('#templateList').append(button);
   }
-  $('#templatesTop').addEventListener('click', openDocumentTemplates);
   $('#libraryTemplates').addEventListener('click', openDocumentTemplates);
   $('#templateClose').addEventListener('click', () => $('#templateDialog').close());
   $('#templateCancel').addEventListener('click', () => $('#templateDialog').close());

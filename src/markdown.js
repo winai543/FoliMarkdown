@@ -41,8 +41,10 @@
   markdownParser.use({ renderer: {
     table(token) {
       const index = markdownContext.tableIndex++;
-      const caption = token._editableTable ? `<caption class="table-editor-caption"><button type="button" class="library-button table-edit" data-table-index="${index}">Edit table</button></caption>` : "";
-      return marked.Renderer.prototype.table.call(this, token).replace("<table>", `<table data-table-index="${index}">${caption}`);
+      const codeEdit = `<button type="button" class="library-button widget-code-edit" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">Edit code</button>`;
+      const tableEdit = token._editableTable ? `<button type="button" class="library-button table-edit" data-table-index="${index}">Edit table</button>` : "";
+      const caption = `<caption class="table-editor-caption"><span class="widget-toolbar">${tableEdit}${codeEdit}</span></caption>`;
+      return marked.Renderer.prototype.table.call(this, token).replace("<table>", `<table data-table-index="${index}" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">${caption}`);
     },
     heading(token) {
       const id = `heading-${markdownContext.headingIndex++}`;
@@ -62,9 +64,9 @@
       if (["mermaid", "chart", "diagram"].includes(language)) {
         const index = markdownContext.diagramIndex++;
         markdownContext.diagramKeys.push(`${index}\u0000${token.text}`);
-        return `<figure class="mermaid-figure" data-diagram-index="${index}" data-mermaid-source="${escapeHtml(token.text)}"><div class="diagram-state">Rendering diagram…</div></figure>\n`;
+        return `<figure class="mermaid-figure" data-diagram-index="${index}" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}" data-mermaid-source="${escapeHtml(token.text)}"><div class="diagram-state">Rendering diagram…</div></figure>\n`;
       }
-      return `<pre><code>${escapeHtml(token.text)}</code></pre>\n`;
+      return `<pre data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}"><code>${escapeHtml(token.text)}</code></pre>\n`;
     },
     html(token) {
       const escaped = escapeHtml(token.text);
@@ -76,7 +78,7 @@
     },
     image(token) {
       const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
-      return `<img src="${safeUrl(token.href, true)}" alt="${escapeHtml(token.text)}"${title} loading="lazy">`;
+      return `<span class="markdown-image-widget" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}"><img src="${safeUrl(token.href, true)}" alt="${escapeHtml(token.text)}"${title} loading="lazy"></span>`;
     },
     listitem(token) {
       return `<li${token.task ? ' class="task"' : ""}>${this.parser.parse(token.tokens)}</li>\n`;
@@ -89,6 +91,8 @@
       if (token.type === "table") token._editableTable = !!tableFromToken(token);
     });
     visitMarkdownSource(tokens, source, (token, offset) => {
+      token._sourceStart = offset;
+      token._sourceEnd = offset + token.raw.length;
       if (token.type === "heading") token._line = source.slice(0, offset).split("\n").length - 1;
     });
     const first = tokens.filter(token => token.type !== "space");

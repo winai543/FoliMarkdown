@@ -19,7 +19,6 @@
     <span class="saved-indicator" id="saveStatus">All changes saved</span>
     <div class="title-actions">
       <button class="top-button" id="libraryTop" title="Document Library" aria-label="Open document library"><span aria-hidden="true">▤</span><span class="library-top-label"> &nbsp;Document Library</span></button>
-      <button class="top-button" id="templatesTop" title="Create a document from a template">Templates</button>
       <button class="top-button" id="newTop" title="Create new document">＋ New</button>
       <button class="top-button share-button" id="downloadTop" title="Download Markdown file">⇩ &nbsp;Download</button>
     </div>
@@ -37,21 +36,14 @@
   <div class="ribbon" data-ribbon="home">
     <div class="ribbon-group">
       <div class="group-content">
-        <button class="tool big" data-action="undo" title="Undo (Ctrl/⌘ Z)"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -3)"/></svg><span>Undo</span></button>
-        <button class="tool big" data-action="redo" title="Redo (Ctrl/⌘ Shift Z)"><svg viewBox="0 0 24 24"><path d="m15 4 5 5-5 5M20 9H10a6 6 0 0 0 0 12"/></svg><span>Redo</span></button>
+        <button class="tool big" data-action="undo" title="Undo (Ctrl/⌘ Z)" disabled><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -3)"/></svg><span>Undo</span></button>
+        <button class="tool big" data-action="redo" title="Redo (Ctrl/⌘ Shift Z)" disabled><svg viewBox="0 0 24 24"><path d="m15 4 5 5-5 5M20 9H10a6 6 0 0 0 0 12"/></svg><span>Redo</span></button>
       </div>
-      <div class="group-label">Clipboard</div>
+      <div class="group-label">History</div>
     </div>
     <div class="ribbon-group">
       <div class="group-content stack">
         <div class="toolbar-row">
-          <select class="style-select" id="styleSelect" aria-label="Text style">
-            <option value="paragraph">Normal text</option>
-            <option value="h1">Heading 1</option>
-            <option value="h2">Heading 2</option>
-            <option value="h3">Heading 3</option>
-            <option value="quote">Block quote</option>
-          </select>
           <select class="style-select" id="docFont" aria-label="Document font" title="Change the font for this document">
             <option value="system">Default</option>
             <option value="Sarabun">Sarabun</option>
@@ -70,7 +62,7 @@
           <button class="tool small" data-action="link" title="Insert link (Ctrl/⌘ K)"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 .3l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.3l-3 3a5 5 0 0 0 7 7l2-2"/></svg></button>
         </div>
       </div>
-      <div class="group-label">Font</div>
+      <div class="group-label">Text</div>
     </div>
     <div class="ribbon-group">
       <div class="group-content stack">
@@ -84,7 +76,6 @@
           <button class="tool small" data-action="h1" title="Heading 1"><b>H1</b></button>
           <button class="tool small" data-action="h2" title="Heading 2"><b>H2</b></button>
           <button class="tool small" data-action="h3" title="Heading 3"><b>H3</b></button>
-          <span class="hint">Paragraph style</span>
         </div>
       </div>
       <div class="group-label">Paragraph</div>
@@ -99,18 +90,23 @@
 
   <div class="ribbon" data-ribbon="file" hidden>
     <div class="ribbon-group"><div class="group-content">
-      <button class="tool big" data-action="library"><svg viewBox="0 0 24 24"><path d="M3 5h18v15H3zM7 2h10v3M7 10h10M7 14h10"/></svg><span>Document Library</span></button>
-      <button class="tool big" data-action="templates"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8"/><rect x="14" y="3" width="7" height="8"/><path d="M3 15h7v6H3zM14 15h7v6h-7z"/></svg><span>Templates</span></button>
       <button class="tool big" data-action="new"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-4-4v8"/></svg><span>New</span></button>
+      <button class="tool big" data-action="templates"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8"/><rect x="14" y="3" width="7" height="8"/><path d="M3 15h7v6H3zM14 15h7v6h-7z"/></svg><span>Templates</span></button>
+      <button class="tool big" data-action="library"><svg viewBox="0 0 24 24"><path d="M3 5h18v15H3zM7 2h10v3M7 10h10M7 14h10"/></svg><span>Library</span></button>
+    </div><div class="group-label">Documents</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="open"><svg viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></svg><span>Open file</span></button>
       <button class="tool big" data-action="openFolder" title="Open a Markdown file and its relative images from a folder"><svg viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></svg><span>Open folder</span></button>
+    </div><div class="group-label">Open</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="linkImageFolder" title="Choose the folder containing this document's relative image paths"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg><span>Link image folder</span></button>
+    </div><div class="group-label">Images</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="download"><svg viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/></svg><span>Save .md</span></button>
+      <button class="tool big" data-action="export"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 4h8"/></svg><span>Export HTML</span></button>
       <button class="tool big" data-action="docx" title="Export editable DOCX file"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 5 2-8 2 8 2-8 2 8"/></svg><span>Export DOCX</span></button>
       <button class="tool big" data-action="pdf" title="Download PDF of the displayed pages"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 17h3a2 2 0 0 0 0-4H8v7m7 0v-7h2a2 2 0 0 1 0 4h-2m0-4v7"/></svg><span>Export PDF</span></button>
-      <button class="tool big" data-action="export"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 4h8"/></svg><span>Export HTML</span></button>
-    </div><div class="group-label">Documents</div></div>
-    <div class="ribbon-group"><div class="group-content"><span class="hint">Drop a .md or .txt file here to open it</span></div><div class="group-label">Tip</div></div>
+    </div><div class="group-label">Save &amp; Export</div></div>
   </div>
 
   <div class="ribbon" data-ribbon="insert" hidden>
@@ -119,9 +115,13 @@
       <button class="tool big" data-action="image" title="Choose, paste, or drop an image"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m2 18 6-6 4 4 3-3 7 7"/></svg><span>Image</span></button>
       <button class="tool big" data-action="table" title="Create a table, or edit the table at the cursor"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"/><path d="M2 9h20M9 3v18m6-18v18M2 15h20"/></svg><span>Table</span></button>
       <button class="tool big" data-action="codeblock"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="m9 9-3 3 3 3m6-6 3 3-3 3"/></svg><span>Code block</span></button>
+      <button class="tool big" data-action="columns" title="Create or edit a row of resizable columns"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M9 3v18m6-18v18"/></svg><span>Columns</span></button>
+      <button class="tool big" data-action="absolute" title="Place Markdown at a corner or custom position"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h5v5H7zM14 14h3"/></svg><span>Floating</span></button>
+    </div><div class="group-label">Content</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="pagebreak" title="New page (Ctrl/⌘ Enter)"><svg viewBox="0 0 24 24"><path d="M5 2h14v7M5 22h14v-7M3 12h18m-11-3 3 3-3 3"/></svg><span>Page break</span></button>
       <button class="tool big" data-action="rule"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg><span>Horizontal rule</span></button>
-    </div><div class="group-label">Markdown · Paste or drop images</div></div>
+    </div><div class="group-label">Breaks</div></div>
   </div>
 
   <div class="ribbon" data-ribbon="chart" hidden>
@@ -129,12 +129,10 @@
       <button class="tool big" data-action="chartBar" title="Configure a bar chart"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21v-8h4v8m2 0V5h4v16m2 0v-12h4v12"/></svg><span>Bar chart</span></button>
       <button class="tool big" data-action="chartLine" title="Configure a line chart"><svg viewBox="0 0 24 24"><path d="M3 21h18M4 16l5-6 4 3 6-8 2 2M4 16h.01M9 10h.01M13 13h.01M19 5h.01"/></svg><span>Line chart</span></button>
       <button class="tool big" data-action="chartPie" title="Configure a pie chart"><svg viewBox="0 0 24 24"><path d="M12 2v10h10A10 10 0 1 1 12 2zm3 0a10 10 0 0 1 7 7h-7z"/></svg><span>Pie chart</span></button>
+    </div><div class="group-label">Create chart</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="editChart" title="Place the cursor in a chart block, then click to edit"><svg viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg><span>Edit chart</span></button>
-    </div><div class="group-label">Charts</div></div>
-    <div class="ribbon-group"><div class="group-content stack">
-      <span class="hint">Choose a chart type to open its settings</span>
-      <span class="hint">Edit labels and values in a simple form</span>
-    </div><div class="group-label">Charts from Markdown</div></div>
+    </div><div class="group-label">Edit</div></div>
   </div>
 
   <div class="ribbon" data-ribbon="diagram" hidden>
@@ -143,12 +141,10 @@
       <button class="tool big" data-action="diagramSequence" title="Create a sequence diagram with participants and messages"><svg viewBox="0 0 24 24"><path d="M5 3v18M19 3v18M5 8h14m-3-3 3 3-3 3M19 16H5m3-3-3 3 3 3"/></svg><span>Sequence</span></button>
       <button class="tool big" data-action="diagramER" title="Create an ER diagram with entities and relationships"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="7" height="6" rx="1"/><rect x="15" y="14" width="7" height="6" rx="1"/><path d="M9 7h5v10h1"/></svg><span>ER Diagram</span></button>
       <button class="tool big" data-action="diagramTimeline" title="Configure a timeline"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 7v10m6-10v10m6-10v10"/><circle cx="6" cy="12" r="2" fill="white"/><circle cx="12" cy="12" r="2" fill="white"/><circle cx="18" cy="12" r="2" fill="white"/></svg><span>Timeline</span></button>
+    </div><div class="group-label">Create diagram</div></div>
+    <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="editDiagram" title="Place the cursor in a diagram block, then click to edit"><svg viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg><span>Edit diagram</span></button>
-    </div><div class="group-label">Diagrams</div></div>
-    <div class="ribbon-group"><div class="group-content stack">
-      <span class="hint">Choose a diagram type to open its settings</span>
-      <span class="hint">Build visually, then edit from the preview</span>
-    </div><div class="group-label">Diagrams from Markdown</div></div>
+    </div><div class="group-label">Edit</div></div>
   </div>
 
   <div class="ribbon" data-ribbon="layout" hidden>
@@ -158,7 +154,6 @@
     </div><div class="group-label">Paper</div></div>
     <div class="ribbon-group"><div class="group-content stack">
       <select class="ribbon-select" id="margin" aria-label="Margins"><option value="normal">Normal</option><option value="narrow">Narrow</option><option value="wide">Wide</option></select>
-      <button class="tool" data-action="pagebreak">＋ Page break</button>
     </div><div class="group-label">Page setup</div></div>
     <div class="ribbon-group"><div class="group-content stack">
       <input class="ribbon-input" id="headerText" aria-label="Header text" placeholder="Header, e.g. {title}" value="{title}">
@@ -170,9 +165,7 @@
     </div><div class="group-label">Options</div></div>
     <div class="ribbon-group"><div class="group-content">
       <button class="tool big" data-action="print" title="Print or save as PDF (Ctrl/⌘ P)"><svg viewBox="0 0 24 24"><path d="M6 8V2h12v6M6 18H3V9h18v9h-3M6 15h12v7H6z"/></svg><span>Print / PDF</span></button>
-      <button class="tool big" data-action="pdf" title="Download PDF directly"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 17h3a2 2 0 0 0 0-4H8v7m7 0v-7h2a2 2 0 0 1 0 4h-2m0-4v7"/></svg><span>.pdf file</span></button>
-      <button class="tool big" data-action="docx" title="Export DOCX file"><svg viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5zM14 2v6h5M8 13h8m-8 5 2-8 2 8 2-8 2 8"/></svg><span>.docx file</span></button>
-    </div><div class="group-label">Export</div></div>
+    </div><div class="group-label">Print</div></div>
   </div>
 
   <div class="ribbon" data-ribbon="view" hidden>
@@ -214,7 +207,7 @@
       <div class="preview-side">
         <div class="pane-heading"><span>Document preview</span><span id="previewLabel" class="hint">Live preview</span></div>
         <div class="preview-scroll" id="previewScroll">
-          <div class="pages" id="pages"></div>
+          <div class="pages editor-preview" id="pages"></div>
         </div>
       </div>
     </section>
@@ -224,9 +217,6 @@
     <span id="wordCount">0 words</span><span id="charCount">0 characters</span><span id="lineCount">1 line</span><span id="pageCount">1 page</span>
     <span class="spacer"></span>
     <span id="statusFormat">Markdown</span>
-    <button class="status-button" data-view="source" title="Markdown">⌨</button>
-    <button class="status-button" data-view="split" title="Split view">◫</button>
-    <button class="status-button" data-view="preview" title="Document preview">▣</button>
     <button class="status-button" id="zoomOut" aria-label="Zoom out">−</button>
     <input class="zoom-range" id="zoom" type="range" min="70" max="130" step="10" value="100" aria-label="Document zoom">
     <button class="status-button" id="zoomIn" aria-label="Zoom in">＋</button>
@@ -289,6 +279,29 @@
     <datalist id="diagramAttributeTypes"><option value="int"><option value="string"><option value="boolean"><option value="float"><option value="date"><option value="datetime"><option value="uuid"><option value="varchar(255)"></datalist>
   </form>
 </dialog>
+<dialog id="layoutDialog" class="chart-dialog layout-dialog" aria-labelledby="layoutDialogTitle">
+  <form id="layoutForm">
+    <header class="chart-dialog-head"><div><h2 id="layoutDialogTitle">Create layout</h2><p id="layoutDialogDescription"></p></div><button type="button" id="layoutClose" class="icon-only" aria-label="Close layout editor">×</button></header>
+    <div class="layout-dialog-content">
+      <section id="layoutColumnsPanel" class="layout-panel" hidden>
+        <div class="layout-panel-heading"><div><h3>Columns</h3><p>Set the width ratio and Markdown for each column. For example, 2 and 1 makes the first column twice as wide.</p></div><button type="button" id="layoutAddColumn" class="library-button">＋ Add column</button></div>
+        <div id="layoutColumns" class="layout-columns"></div>
+      </section>
+      <section id="layoutAbsolutePanel" class="layout-panel" hidden>
+        <fieldset class="layout-position-field"><legend>Position inside the page</legend>
+          <label class="layout-field">Position type<select id="layoutPositionMode"><option value="anchor">Snap to a corner</option><option value="coordinates">Custom coordinates</option></select></label>
+          <label class="layout-field" id="layoutAnchorField">Corner<select id="layoutAnchor"><option value="top-left">Top left</option><option value="top-right">Top right</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option></select></label>
+          <div id="layoutCoordinateFields" class="layout-coordinate-fields" hidden>
+            <label class="layout-field">X position (px from left)<input id="layoutX" type="number" step="1" min="-100000" max="100000" value="0"></label>
+            <label class="layout-field">Y position (px from top)<input id="layoutY" type="number" step="1" min="-100000" max="100000" value="0"></label>
+          </div>
+        </fieldset>
+        <label class="layout-field" for="layoutAbsoluteText">Markdown content<textarea id="layoutAbsoluteText" rows="8" placeholder="Write Markdown here…"></textarea></label>
+      </section>
+    </div>
+    <footer class="chart-dialog-footer"><p id="layoutError" class="chart-error" role="alert"></p><button type="button" id="layoutCancel" class="library-button">Cancel</button><button type="submit" id="layoutSave" class="library-button primary">Insert into document</button></footer>
+  </form>
+</dialog>
 <dialog id="tableDialog" class="chart-dialog table-dialog" aria-labelledby="tableDialogTitle">
   <form id="tableForm">
     <header class="chart-dialog-head"><div><h2 id="tableDialogTitle">Create table</h2><p>Edit headers and cells, then insert a standard Markdown table.</p></div><button type="button" id="tableClose" class="icon-only" aria-label="Close table settings">×</button></header>
@@ -327,6 +340,7 @@
 <script src="src/diagram-editor.js"></script>
 <script src="src/table-model.js"></script>
 <script src="src/table-editor.js"></script>
+<script src="src/layout-editor.js"></script>
 <script src="src/export-styles.js"></script>
 <script src="src/desktop.js"></script>
 <script src="src/files.js"></script>

@@ -50,6 +50,50 @@ npm run build:web
 cargo test --locked --manifest-path src-tauri/Cargo.toml
 ```
 
+## Command-line conversion
+
+For complete usage, options, and API examples in Thai, see the [CLI guide](docs/cli.md).
+
+The CLI converts the same Markdown extensions that FoliMarkdown renders, including columns, floating content, tables, page breaks, images, and Mermaid diagrams/charts. It runs the app's DOCX and PDF exporters in headless Chrome/Chromium. Install Node.js 22.12+ and Chrome/Chromium, then run:
+
+```sh
+npm ci
+npm run convert -- document.md
+# Optional: expose `folimarkdown` on your PATH
+npm link
+folimarkdown document.md --format pdf --out-dir exports
+```
+
+By default, the CLI writes `document.docx` and `document.pdf` alongside `document.md`. Choose one format with `--format docx` or `--format pdf`; `--output path` sets its filename. Existing output files are protected unless you pass `--force`.
+
+Page settings saved by FoliMarkdown in the Markdown file are loaded automatically. The following flags override individual settings:
+
+```sh
+folimarkdown proposal.md --paper letter --orientation landscape --margin narrow \
+  --header "{title}" --footer "Page {page} of {pages}" --page-numbers
+folimarkdown invitation.md --format docx --no-header --no-footer \
+  --no-page-numbers --first-page-blank --font "Noto Serif Thai" --title "Invitation"
+```
+
+Other options include `--no-first-page-blank`, `--output`, `--out-dir`, `--chrome /path/to/chrome`, `--timeout seconds`, and `--help`. Empty `--header ""` or `--footer ""` also clears that field. Relative image paths resolve from the input Markdown file's directory; embedded data images work directly. If the file contains `asset:` image references from the app's private storage, use **Save .md** in FoliMarkdown first to embed those images. Mermaid rendering requires internet access, as it does in the app; conversion reports an error if a diagram or image cannot render.
+
+### HTTP API
+
+Start the server with Chrome/Chromium installed:
+
+```sh
+npm run serve:cli -- --port 3000
+curl http://127.0.0.1:3000/health
+curl -sS http://127.0.0.1:3000/convert \
+  -H 'Content-Type: application/json' \
+  -d '{"markdown":"# Report\n\nHello **world**.","format":"pdf","title":"Report","layout":{"paperSize":"a4","orientation":"portrait","margin":"normal","header":"{title}","footer":"Page {page} of {pages}","pageNumbers":true,"firstPageBlank":false,"font":"system"}}' \
+  -o report.pdf
+```
+
+`POST /convert` accepts JSON with `markdown` (required), `format` (`pdf`, `docx`, or `both`), `title`, `filename`, `layout`, and `images`. It returns a PDF, DOCX, or ZIP containing both files. The default format is PDF. `layout` overrides only the supplied page settings; saved settings inside the Markdown remain in effect. To supply a relative image such as `![Photo](images/photo.png)`, include `"images":{"images/photo.png":"data:image/png;base64,..."}` in the JSON request. Embedded data images need no separate entry. Errors return JSON with an `error` message.
+
+The server listens on `127.0.0.1` by default, accepts requests up to 25 MB, and runs two conversions at a time. Use `--max-input-mb`, `--max-concurrent`, `--timeout`, and `--chrome` to adjust these limits. To listen on another interface, set `--host` and a Bearer token with `--token` or `FOLIMARKDOWN_API_TOKEN`; clients send `Authorization: Bearer <token>`. `--cors-origin https://example.com` permits requests from that browser origin.
+
 ## Features
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
@@ -132,7 +176,7 @@ File associations apply to installed desktop builds; the browser demo does not r
 
 ## Document templates
 
-Choose **Templates** in the top bar, **File → Templates**, or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
+Choose **File → Templates** or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
 
 Built-in templates include **Resume**, **Invoice**, **Meeting agenda**, **Project proposal**, **Daily schedule**, **Lesson plan**, **Student certificate**, **Wedding invitation**, and **Travel itinerary**. Replace the sample text and bracketed placeholders with your details. Invoice amounts and proposal budgets are examples; update totals manually. Certificates use landscape paper; invitations and certificates omit running headers, footers, and page numbers.
 

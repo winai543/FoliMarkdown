@@ -3,6 +3,7 @@
 initializeChartEditor();
 initializeDiagramEditor();
 initializeTableEditor();
+initializeLayoutEditor();
 initializeDocumentTemplates();
 const libraryStarted = startLibrary();
 initializeDesktop(libraryStarted).catch(error => {

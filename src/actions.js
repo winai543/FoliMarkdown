@@ -14,6 +14,8 @@
       case "quote": prefixLines("> "); break;
       case "h1": case "h2": case "h3": heading(Number(action[1])); break;
       case "table": openTableEditor(); break;
+      case "columns": openLayoutEditor("columns"); break;
+      case "absolute": openLayoutEditor("absolute"); break;
       case "codeblock": insertBlock("```\nYour code\n```"); break;
       case "chartBar": openChartEditor("chartBar"); break;
       case "chartLine": openChartEditor("chartLine"); break;
@@ -41,8 +43,8 @@
         setNavigationTab("results");
         requestAnimationFrame(() => $("#search").focus());
         break;
-      case "undo": if (historyIndex > 0) { historyIndex--; editor.value = history[historyIndex]; lastHistoryAt = 0; render(); refreshEditorHeight(); scheduleSave(); editor.focus(); } break;
-      case "redo": if (historyIndex < history.length - 1) { historyIndex++; editor.value = history[historyIndex]; lastHistoryAt = 0; render(); refreshEditorHeight(); scheduleSave(); editor.focus(); } break;
+      case "undo": if (historyIndex > 0) { historyIndex--; syncHistoryTools(); editor.value = history[historyIndex]; lastHistoryAt = 0; render(); refreshEditorHeight(); scheduleSave(); editor.focus(); } break;
+      case "redo": if (historyIndex < history.length - 1) { historyIndex++; syncHistoryTools(); editor.value = history[historyIndex]; lastHistoryAt = 0; render(); refreshEditorHeight(); scheduleSave(); editor.focus(); } break;
       case "library": openLibrary(); break;
       case "new": libraryAction("new"); break;
       case "templates": openDocumentTemplates(); break;

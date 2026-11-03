@@ -2,6 +2,22 @@
 // Shared classic-script scope: see README for load order and file:// support.
   document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => perform(button.dataset.action)));
   pages.addEventListener("click", event => {
+    const columnEdit = event.target.closest(".column-edit");
+    if (columnEdit) {
+      const start = Number(columnEdit.dataset.rowStart);
+      editor.setSelectionRange(start, start);
+      openLayoutEditor("columns", Number(columnEdit.dataset.columnIndex));
+      return;
+    }
+    const codeEdit = event.target.closest(".widget-code-edit");
+    if (codeEdit) {
+      const start = Number(codeEdit.dataset.sourceStart), end = Number(codeEdit.dataset.sourceEnd);
+      setView(window.innerWidth <= 680 ? "source" : "split");
+      editor.focus(); editor.setSelectionRange(start, end);
+      const line = editor.value.slice(0, start).split("\n").length - 1;
+      sourceWrap.scrollTop = Math.max(0, line * 24 - sourceWrap.clientHeight / 3);
+      return;
+    }
     const tableEdit = event.target.closest(".table-edit");
     if (tableEdit) { openTableEditor(Number(tableEdit.dataset.tableIndex)); return; }
     const edit = event.target.closest(".diagram-edit");
@@ -35,12 +51,6 @@
   document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => {
     setNavigationTab(button.dataset.nav);
   }));
-  $("#styleSelect").addEventListener("change", event => {
-    const value = event.target.value;
-    if (value === "quote") perform("quote");
-    else heading(value === "paragraph" ? 0 : Number(value[1]));
-    event.target.value = "paragraph";
-  });
   $("#search").addEventListener("input", () => {
     if ($("#search").value.trim()) setNavigationTab("results");
     else renderNavigation();
@@ -184,11 +194,14 @@
     const zoom = Math.max(70, Math.min(130, Number(value)));
     $("#zoom").value = zoom;
     $("#zoomLabel").textContent = `${zoom}%`;
+    $("#zoomOut").disabled = zoom <= 70;
+    $("#zoomIn").disabled = zoom >= 130;
     pages.querySelectorAll(".page").forEach(page => page.style.zoom = `${effectiveZoom()}%`);
   }
   $("#zoom").addEventListener("input", event => setZoom(event.target.value));
   $("#zoomOut").addEventListener("click", () => setZoom(Number($("#zoom").value) - 10));
   $("#zoomIn").addEventListener("click", () => setZoom(Number($("#zoom").value) + 10));
+  setZoom($("#zoom").value);
   window.addEventListener("resize", () => {
     if (window.innerWidth <= 680 && currentView === "split") setView("source");
     refreshEditorHeight();

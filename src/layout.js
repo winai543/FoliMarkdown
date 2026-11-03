@@ -1,5 +1,34 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
+  function addWidgetCodeButton(widget) {
+    if (widget.querySelector(":scope > .widget-toolbar")) return;
+    const toolbar = document.createElement("div");
+    toolbar.className = "widget-toolbar";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "library-button widget-code-edit";
+    button.dataset.sourceStart = widget.dataset.sourceStart;
+    button.dataset.sourceEnd = widget.dataset.sourceEnd;
+    button.textContent = "Edit code";
+    button.setAttribute("aria-label", "Edit this widget’s Markdown source");
+    if (widget.matches(".markdown-row")) {
+      widget.querySelectorAll(":scope > .markdown-col").forEach(column => {
+        const editColumn = document.createElement("button");
+        editColumn.type = "button";
+        editColumn.className = "library-button column-edit";
+        editColumn.dataset.rowStart = column.dataset.rowStart;
+        editColumn.dataset.columnIndex = column.dataset.columnIndex;
+        editColumn.textContent = `Col ${Number(column.dataset.columnIndex) + 1}`;
+        editColumn.title = `Edit column ${Number(column.dataset.columnIndex) + 1}`;
+        editColumn.setAttribute("aria-label", `Edit column ${Number(column.dataset.columnIndex) + 1}`);
+        toolbar.append(editColumn);
+      });
+    }
+    const diagramEdit = widget.querySelector(":scope > .diagram-edit");
+    if (diagramEdit) toolbar.append(diagramEdit);
+    toolbar.append(button);
+    widget.append(toolbar);
+  }
   function paperDimensions() {
     const portrait = layout.paperSize === "letter" ? [816, 1056] : [794, 1123];
     return layout.orientation === "landscape" ? portrait.reverse() : portrait;
@@ -267,5 +296,14 @@
       else image.addEventListener("load", rememberSize, { once: true });
     });
     queueDiagrams(figures);
+    pages.querySelectorAll("[data-source-start][data-source-end]").forEach(widget => {
+      if (widget.matches("table")) return;
+      if (widget.matches("img")) return;
+      if (widget.matches(".markdown-image-widget")) {
+        addWidgetCodeButton(widget);
+        return;
+      }
+      if (widget.matches(".markdown-row, .markdown-absolute, .mermaid-figure, pre")) addWidgetCodeButton(widget);
+    });
     refreshPreviewHighlights();
   }

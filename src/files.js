@@ -45,9 +45,10 @@
   }
   function exportHtml() {
     const printedPages = pages.cloneNode(true);
+    printedPages.classList.remove("editor-preview");
     // Make unlinked app-relative URLs absolute so downloads resolve from any folder.
     printedPages.querySelectorAll("img").forEach(image => image.setAttribute("src", image.src));
-    printedPages.querySelectorAll(".diagram-edit, .table-editor-caption").forEach(button => button.remove());
+    printedPages.querySelectorAll(".widget-toolbar, .table-editor-caption").forEach(button => button.remove());
     let css;
     try {
       // Available when served over HTTP; not readable from file:// in some browsers.

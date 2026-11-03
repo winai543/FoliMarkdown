@@ -3,16 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "description": "Markdown document editor for the browser and desktop",
+  "bin": {
+    "folimarkdown": "bin/folimarkdown.cjs"
+  },
   "scripts": {
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "build:web": "node scripts/build-web.cjs",
+    "convert": "node bin/folimarkdown.cjs",
+    "serve:cli": "node bin/folimarkdown.cjs serve",
     "check": "node scripts/sync-export-css.cjs --check && node tests/export-css.cjs && node tests/chart-model.cjs && node tests/diagram-model.cjs && node tests/table-model.cjs && node tests/desktop.cjs",
     "test": "npm run check && node tests/smoke.cjs && node tests/chart-editor.cjs && node tests/diagram-editor.cjs && node tests/table-editor.cjs && node tests/image-paths.cjs && node tests/templates.cjs && node tests/columns.cjs && node tests/absolute.cjs && node tests/file-associations.cjs"
   },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
+  "dependencies": {
     "puppeteer": "^25.16.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
   }
 }

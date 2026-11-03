@@ -73,7 +73,7 @@ const COLUMN_EXTENSION = {
   },
   renderer(token) {
     const total = token.columns.reduce((sum, column) => sum + column.ratio, 0);
-    return `<div class="markdown-row">${token.columns.map(column => `<div class="markdown-col" style="flex-grow:${column.ratio / total}">${this.parser.parse(column.tokens)}</div>`).join('')}</div>\n`;
+    return `<div class="markdown-row" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">${token.columns.map((column, index) => `<div class="markdown-col" data-row-start="${token._sourceStart}" data-column-index="${index}" style="flex-grow:${column.ratio / total}">${this.parser.parse(column.tokens)}</div>`).join('')}</div>\n`;
   }
 };
 const ABSOLUTE_EXTENSION = {
@@ -89,7 +89,7 @@ const ABSOLUTE_EXTENSION = {
   },
   renderer(token) {
     const style = Object.entries(token.position).map(([key, value]) => `${key}:${value}px`).join(';');
-    return `<div class="markdown-absolute" style="${style}">${this.parser.parse(token.tokens)}</div>\n`;
+    return `<div class="markdown-absolute" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}" style="${style}">${this.parser.parse(token.tokens)}</div>\n`;
   }
 };
 // Keep source offsets for editing tables/charts and navigating headings inside columns.
