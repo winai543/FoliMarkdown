@@ -63,7 +63,7 @@ Select text and use the toolbar above, or type Markdown directly.
   let libraryFilter = "active";
   let lastLibraryFocus = null;
   let ready = false;
-  const DEFAULT_LAYOUT = Object.freeze({ paperSize: "a4", orientation: "portrait", margin: "normal", header: "{title}", footer: "FoliMarkdown", pageNumbers: true, firstPageBlank: false, font: "system" });
+  const DEFAULT_LAYOUT = Object.freeze({ paperSize: "a4", orientation: "portrait", margin: "normal", header: "{title}", footer: "FoliMarkdown", pageNumbers: true, firstPageBlank: false, font: "system", documentColor: "#263144", accentColor: "#1b3557", backgroundColor: "#ffffff", backgroundImage: "", backgroundSize: "cover", backgroundOpacity: 25 });
   let layout = { ...DEFAULT_LAYOUT };
   let fontRequest = 0;
   let fontReady = Promise.resolve();

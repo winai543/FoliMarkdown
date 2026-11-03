@@ -1,6 +1,9 @@
 "use strict";
 // Shared classic-script scope: see README for load order and file:// support.
   document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => perform(button.dataset.action)));
+  editor.addEventListener("click", syncAlignmentTools);
+  editor.addEventListener("keyup", syncAlignmentTools);
+  editor.addEventListener("select", syncAlignmentTools);
   pages.addEventListener("click", event => {
     const columnEdit = event.target.closest(".column-edit");
     if (columnEdit) {
@@ -67,6 +70,17 @@
   $("#docFont").addEventListener("change", event => {
     layout.font = event.target.value;
     applyDocumentFont();
+    paginate();
+    scheduleSave();
+  });
+  $("#documentColor").addEventListener("input", event => {
+    layout.documentColor = event.target.value;
+    $("#documentColorSample").style.backgroundColor = event.target.value;
+    paginate();
+    scheduleSave();
+  });
+  $("#accentColor").addEventListener("input", event => {
+    layout.accentColor = event.target.value;
     paginate();
     scheduleSave();
   });

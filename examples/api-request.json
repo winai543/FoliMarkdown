@@ -1,0 +1,34 @@
+{
+  "template": "# {{report.title}}\n\n::: center\n**{{report.subtitle}}**\n:::\n\nPrepared for **{{customer.name}}** on {{report.date}}.\n\n| Item | Amount |\n| :--- | ---: |\n{{#each items}}| {{name}} | {{amount}} |\n{{/each}}",
+  "data": {
+    "report": {
+      "title": "Monthly report",
+      "subtitle": "Service summary",
+      "date": "2026-11-03"
+    },
+    "customer": {
+      "name": "Example Co."
+    },
+    "items": [
+      {
+        "name": "Design",
+        "amount": "500.00"
+      },
+      {
+        "name": "Support",
+        "amount": "250.00"
+      }
+    ]
+  },
+  "format": "pdf",
+  "title": "Monthly report",
+  "filename": "monthly-report",
+  "layout": {
+    "paperSize": "a4",
+    "orientation": "portrait",
+    "margin": "normal",
+    "header": "{title}",
+    "footer": "Page {page} of {pages}",
+    "pageNumbers": true
+  }
+}

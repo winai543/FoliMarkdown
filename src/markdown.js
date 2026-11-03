@@ -27,7 +27,7 @@
   const markdownParser = new marked.Marked({
     gfm: true,
     breaks: false,
-    extensions: [COLUMN_EXTENSION, ABSOLUTE_EXTENSION, {
+    extensions: [COLUMN_EXTENSION, ABSOLUTE_EXTENSION, ALIGN_EXTENSION, {
       name: "pagebreak",
       level: "block",
       start(source) { return source.search(/<!--\s*pagebreak\s*-->/i); },

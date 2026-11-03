@@ -13,6 +13,7 @@
       case "task": prefixLines("- [ ] "); break;
       case "quote": prefixLines("> "); break;
       case "h1": case "h2": case "h3": heading(Number(action[1])); break;
+      case "alignLeft": case "alignCenter": case "alignRight": alignSelection(action.slice(5).toLowerCase()); break;
       case "table": openTableEditor(); break;
       case "columns": openLayoutEditor("columns"); break;
       case "absolute": openLayoutEditor("absolute"); break;

@@ -80,11 +80,28 @@
     const firstFooterId = layout.firstPageBlank ? rel("footer", "footer2.xml") : null;
     const font = GOOGLE_FONTS.has(layout.font) ? layout.font : "Noto Sans Thai";
     const fontXml = docxXml(font);
+    const textColor = /^#[0-9a-f]{6}$/i.test(layout.documentColor || "") ? layout.documentColor.slice(1).toUpperCase() : "263144";
+    const accentColor = /^#[0-9a-f]{6}$/i.test(layout.accentColor || "") ? layout.accentColor.slice(1).toUpperCase() : "1B3557";
+    const tintColor = (hex, whiteRatio) => {
+      const channels = hex.match(/.{2}/g).map(channel => parseInt(channel, 16));
+      return channels.map(channel => Math.round(channel * (1 - whiteRatio) + 255 * whiteRatio).toString(16).padStart(2, "0")).join("").toUpperCase();
+    };
+    const accentSoft = accentColor === "1B3557" ? "EAF1FA" : tintColor(accentColor, 0.91);
+    const accentBorder = accentColor === "1B3557" ? "DAE1E9" : tintColor(accentColor, 0.78);
+    const accentWash = accentColor === "1B3557" ? "F7F9FC" : tintColor(accentColor, 0.97);
+    const pageColor = /^#[0-9a-f]{6}$/i.test(layout.backgroundColor || "") ? layout.backgroundColor : "#ffffff";
+    const customTextColor = textColor !== "263144";
+    const bodyColor = readableDocumentColor(`#${textColor}`, pageColor).slice(1).toUpperCase();
+    const headingColor = customTextColor ? bodyColor : readableDocumentColor("#1b3557", pageColor).slice(1).toUpperCase();
+    const linkColor = customTextColor ? bodyColor : readableDocumentColor("#155bb5", pageColor).slice(1).toUpperCase();
+    const tableTextColor = readableDocumentColor(`#${textColor}`, "#ffffff").slice(1).toUpperCase();
+    const tableHeadingColor = readableDocumentColor(`#${customTextColor ? textColor : "234369"}`, `#${accentSoft}`).slice(1).toUpperCase();
     const textRun = (value, options = {}) => {
       const settings = [
         options.bold ? "<w:b/>" : "", options.italic ? "<w:i/>" : "",
         options.strike ? "<w:strike/>" : "", options.code ? '<w:rFonts w:ascii="Liberation Mono" w:hAnsi="Liberation Mono"/>' : "",
-        options.link ? '<w:color w:val="14685F"/><w:u w:val="single"/>' : ""
+        options.color || options.link ? `<w:color w:val="${options.color || linkColor}"/>` : "",
+        options.link ? '<w:u w:val="single"/>' : ""
       ].join("");
       const text = String(value).replace(/\r\n?/g, "\n").split("\n")
         .map((part, i) => `${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${docxXml(part)}</w:t>`).join("");
@@ -99,14 +116,15 @@
     const [pageWidth, pageHeight] = layout.orientation === "landscape" ? [base[1], base[0]] : base;
     const side = ({ normal: 1140, narrow: 720, wide: 1500 })[layout.margin] || 1140;
     const usableWidth = pageWidth - 2 * side;
+    let activeAlignment = null;
     const paragraph = (runs = "", settings = {}) => {
       const props = [
         settings.style ? `<w:pStyle w:val="${settings.style}"/>` : "",
         settings.numId ? `<w:numPr><w:ilvl w:val="${Math.min(settings.depth || 0, 8)}"/><w:numId w:val="${settings.numId}"/></w:numPr>` : "",
         settings.indent ? `<w:ind w:left="${settings.indent}"/>` : "",
-        settings.align ? `<w:jc w:val="${settings.align}"/>` : "",
-        settings.quote ? '<w:pBdr><w:left w:val="single" w:sz="18" w:space="7" w:color="3978C9"/></w:pBdr>' : "",
-        settings.rule ? '<w:pBdr><w:bottom w:val="single" w:sz="6" w:color="DCE2E9"/></w:pBdr>' : ""
+        (settings.align || activeAlignment || layout.documentKind === "certificate") ? `<w:jc w:val="${settings.align || activeAlignment || "center"}"/>` : "",
+        settings.quote ? `<w:pBdr><w:left w:val="single" w:sz="18" w:space="7" w:color="${accentColor}"/></w:pBdr>` : "",
+        settings.rule ? `<w:pBdr><w:bottom w:val="single" w:sz="6" w:color="${accentBorder}"/></w:pBdr>` : ""
       ].join("");
       return `<w:p>${props ? `<w:pPr>${props}</w:pPr>` : ""}${runs}</w:p>`;
     };
@@ -214,6 +232,13 @@
         let output = "";
         for (const token of tokens || []) {
           if (token.type === "space") continue;
+          if (token.type === "alignBlock") {
+            const previousAlignment = activeAlignment;
+            activeAlignment = token.align;
+            try { output += await blocks(token.tokens, depth, quoted, availableWidth); }
+            finally { activeAlignment = previousAlignment; }
+            continue;
+          }
           if (token.type === "absoluteBlock") {
             // Word text boxes group rich content in a floating, auto-sized frame.
             const previousLimit = imageHeightLimit;
@@ -288,13 +313,14 @@
             const totalWeight = profiles.reduce((sum, column) => sum + column.weight, 0);
             const widths = profiles.map(column => Math.floor(contentWidth * column.weight / totalWeight));
             widths[count - 1] += contentWidth - widths.reduce((sum, width) => sum + width, 0);
-            const row = async (cells, header) => `<w:tr>${(await Promise.all(cells.map(async (cell, i) => {
+            const row = async (cells, header, rowIndex = 0) => `<w:tr>${(await Promise.all(cells.map(async (cell, i) => {
               const align = token.align[i] === "center" ? "center" : profiles[i].numeric ? "right" : token.align[i] === "right" ? "right" : "left";
-              return `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/>${header ? '<w:shd w:fill="EAF1FA"/>' : ""}</w:tcPr>${paragraph(await inlineRuns(cell.tokens, header ? { bold: true } : {}), { align })}</w:tc>`;
+              const fill = header ? accentSoft : rowIndex % 2 ? accentWash : "FFFFFF";
+              return `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/><w:shd w:fill="${fill}"/></w:tcPr>${paragraph(await inlineRuns(cell.tokens, { bold: header, color: header ? tableHeadingColor : tableTextColor }), { align })}</w:tc>`;
             }))).join("")}</w:tr>`;
             const rows = [await row(token.header, true)];
-            for (const cells of token.rows) rows.push(await row(cells, false));
-            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="DAE1E9"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
+            for (let index = 0; index < token.rows.length; index++) rows.push(await row(token.rows[index], false, index));
+            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="${accentBorder}"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
           }
         }
         return output;
@@ -302,11 +328,38 @@
     };
     const tokens = markdownParser.lexer(editor.value.replace(/\r\n?/g, "\n"));
     const body = await blocks(tokens) || paragraph();
+    let pageBackground = "";
+    const backgroundColor = pageColor.slice(1).toUpperCase();
+    let backgroundFill = "";
+    const backgroundImage = /^data:(image\/(?:png|jpe?g|webp));base64,([a-z0-9+/]+={0,2})$/i.exec(layout.backgroundImage || "");
+    if (backgroundImage) {
+      try {
+        let blob = new Blob([Uint8Array.from(atob(backgroundImage[2]), char => char.charCodeAt(0))], { type: backgroundImage[1] });
+        let extension = backgroundImage[1] === "image/jpeg" ? "jpeg" : "png";
+        if (backgroundImage[1] === "image/webp") {
+          const bitmap = await createImageBitmap(blob);
+          const canvas = document.createElement("canvas");
+          canvas.width = bitmap.width; canvas.height = bitmap.height;
+          canvas.getContext("2d").drawImage(bitmap, 0, 0);
+          bitmap.close();
+          blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+          if (!blob) throw new Error("Cannot convert WebP background");
+        }
+        const path = `word/media/background.${extension}`;
+        files.set(path, new Uint8Array(await blob.arrayBuffer()));
+        const rid = rel("image", path.slice(5));
+        const opacityValue = Number(layout.backgroundOpacity ?? 25);
+        const opacity = Number.isFinite(opacityValue) ? Math.max(0, Math.min(100, opacityValue)) : 25;
+        const aspect = layout.backgroundSize === "contain" ? "atMost" : layout.backgroundSize === "stretch" ? "ignore" : "atLeast";
+        backgroundFill = `<v:background id="_x0000_s1025"><v:fill r:id="${rid}" type="frame" aspect="${aspect}" opacity="${opacity}%"/></v:background>`;
+      } catch (error) { console.warn("Cannot embed DOCX page background:", error); warnings++; }
+    }
+    if (backgroundColor !== "FFFFFF" || backgroundFill) pageBackground = `<w:background w:color="${backgroundColor}">${backgroundFill}</w:background>`;
     const w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     const documentNs = `xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="${w}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"`;
     const sect = `<w:sectPr><w:headerReference w:type="default" r:id="${headerId}"/><w:footerReference w:type="default" r:id="${footerId}"/>${layout.firstPageBlank ? `<w:headerReference w:type="first" r:id="${firstHeaderId}"/><w:footerReference w:type="first" r:id="${firstFooterId}"/>` : ""}<w:pgSz w:w="${pageWidth}" w:h="${pageHeight}"${layout.orientation === "landscape" ? ' w:orient="landscape"' : ""}/><w:pgMar w:top="1540" w:right="${side}" w:bottom="1350" w:left="${side}" w:header="600" w:footer="600"/><w:cols w:space="720"/>${layout.firstPageBlank ? "<w:titlePg/>" : ""}</w:sectPr>`;
     const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-    files.set("word/document.xml", `${xml}<w:document ${documentNs}><w:body>${body}${sect}</w:body></w:document>`);
+    files.set("word/document.xml", `${xml}<w:document ${documentNs}>${pageBackground}<w:body>${body}${sect}</w:body></w:document>`);
     const rns = 'xmlns="http://schemas.openxmlformats.org/package/2006/relationships"';
     files.set("word/_rels/document.xml.rels", `${xml}<Relationships ${rns}>${relationships.join("")}</Relationships>`);
     files.set("word/header1.xml", `${xml}<w:hdr xmlns:w="${w}">${paragraph(pageVariables(layout.header))}</w:hdr>`);
@@ -316,11 +369,11 @@
       files.set("word/header2.xml", `${xml}<w:hdr xmlns:w="${w}"><w:p/></w:hdr>`);
       files.set("word/footer2.xml", `${xml}<w:ftr xmlns:w="${w}"><w:p/></w:ftr>`);
     }
-    const headingStyles = [46, 34, 28, 24, 22, 22].map((size, index) => `<w:style w:type="paragraph" w:styleId="Heading${index + 1}"><w:name w:val="heading ${index + 1}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="260" w:after="120"/></w:pPr><w:rPr><w:b/><w:color w:val="1B3557"/><w:sz w:val="${size}"/></w:rPr></w:style>`).join("");
-    files.set("word/styles.xml", `${xml}<w:styles xmlns:w="${w}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${fontXml}" w:hAnsi="${fontXml}" w:eastAsia="${fontXml}"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="140" w:line="330" w:lineRule="auto"/></w:pPr></w:style>${headingStyles}<w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="0" w:line="260" w:lineRule="auto"/><w:shd w:fill="F1F3F7"/></w:pPr><w:rPr><w:rFonts w:ascii="Liberation Mono" w:hAnsi="Liberation Mono"/><w:sz w:val="19"/></w:rPr></w:style></w:styles>`);
+    const headingStyles = [46, 34, 28, 24, 22, 22].map((size, index) => `<w:style w:type="paragraph" w:styleId="Heading${index + 1}"><w:name w:val="heading ${index + 1}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="260" w:after="120"/></w:pPr><w:rPr><w:b/><w:color w:val="${headingColor}"/><w:sz w:val="${size}"/></w:rPr></w:style>`).join("");
+    files.set("word/styles.xml", `${xml}<w:styles xmlns:w="${w}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${fontXml}" w:hAnsi="${fontXml}" w:eastAsia="${fontXml}"/><w:color w:val="${bodyColor}"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="140" w:line="330" w:lineRule="auto"/></w:pPr></w:style>${headingStyles}<w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="0" w:line="260" w:lineRule="auto"/><w:shd w:fill="F1F3F7"/></w:pPr><w:rPr><w:rFonts w:ascii="Liberation Mono" w:hAnsi="Liberation Mono"/><w:sz w:val="19"/></w:rPr></w:style></w:styles>`);
     const levels = ordered => Array.from({ length: 9 }, (_, level) => `<w:lvl w:ilvl="${level}"><w:start w:val="1"/><w:numFmt w:val="${ordered ? "decimal" : "bullet"}"/><w:lvlText w:val="${ordered ? `%${level + 1}.` : ["•", "○", "▪"][level % 3]}"/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="${720 + level * 360}"/></w:tabs><w:ind w:left="${720 + level * 360}" w:hanging="360"/></w:pPr></w:lvl>`).join("");
     files.set("word/numbering.xml", `${xml}<w:numbering xmlns:w="${w}"><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="multilevel"/>${levels(false)}</w:abstractNum><w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="multilevel"/>${levels(true)}</w:abstractNum>${numbering.map(item => `<w:num w:numId="${item.id}"><w:abstractNumId w:val="${item.ordered ? 1 : 0}"/>${item.ordered && item.start !== 1 ? `<w:lvlOverride w:ilvl="${item.level}"><w:startOverride w:val="${item.start}"/></w:lvlOverride>` : ""}</w:num>`).join("")}</w:numbering>`);
-    files.set("word/settings.xml", `${xml}<w:settings xmlns:w="${w}"><w:updateFields w:val="true"/></w:settings>`);
+    files.set("word/settings.xml", `${xml}<w:settings xmlns:w="${w}"><w:updateFields w:val="true"/>${pageBackground ? '<w:displayBackgroundShape w:val="true"/>' : ""}</w:settings>`);
     files.set("_rels/.rels", `${xml}<Relationships ${rns}><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
     const date = new Date().toISOString();
     files.set("docProps/core.xml", `${xml}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${docxXml(docName.value)}</dc:title><dc:creator>FoliMarkdown</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${date}</dcterms:created></cp:coreProperties>`);

@@ -54,6 +54,7 @@
             <option value="Noto Serif Thai">Noto Serif Thai</option>
             <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
           </select>
+          <label class="document-color-picker" title="Change document text color"><span>A</span><i id="documentColorSample"></i><input type="color" id="documentColor" value="#263144" aria-label="Document text color"></label>
         </div>
         <div class="toolbar-row">
           <button class="tool small text-icon" data-action="bold" title="Bold (Ctrl/⌘ B)">B</button>
@@ -77,6 +78,10 @@
           <button class="tool small" data-action="h1" title="Heading 1"><b>H1</b></button>
           <button class="tool small" data-action="h2" title="Heading 2"><b>H2</b></button>
           <button class="tool small" data-action="h3" title="Heading 3"><b>H3</b></button>
+          <span class="toolbar-separator" aria-hidden="true"></span>
+          <button class="tool small" data-action="alignLeft" title="Align left" aria-label="Align left" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 5h18M3 10h12M3 15h18M3 20h12"/></svg></button>
+          <button class="tool small" data-action="alignCenter" title="Align center" aria-label="Align center" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 5h18M6 10h12M3 15h18M6 20h12"/></svg></button>
+          <button class="tool small" data-action="alignRight" title="Align right" aria-label="Align right" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 5h18M9 10h12M3 15h18M9 20h12"/></svg></button>
         </div>
       </div>
       <div class="group-label">Paragraph</div>
@@ -156,6 +161,12 @@
     <div class="ribbon-group"><div class="group-content stack">
       <select class="ribbon-select" id="margin" aria-label="Margins"><option value="normal">Normal</option><option value="narrow">Narrow</option><option value="wide">Wide</option></select>
     </div><div class="group-label">Page setup</div></div>
+    <div class="ribbon-group"><div class="group-content">
+      <button type="button" class="tool big" id="pageBackgroundOpen" title="Set page background color or image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="2"/><path d="m3 18 6-6 3 3 3-4 6 7"/></svg><span>Background</span></button>
+    </div><div class="group-label">Page color</div></div>
+    <div class="ribbon-group"><div class="group-content">
+      <label class="theme-accent-picker tool big" title="Set the document accent color"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.4-3.4 1.8 1.8 0 0 1 1.3-3.1H18a3 3 0 0 0 3-3c0-4.7-4-8.5-9-8.5Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14.5" cy="7" r="1"/></svg><i id="accentColorSample"></i><span>Accent color</span><input type="color" id="accentColor" value="#1b3557" aria-label="Document accent color"></label>
+    </div><div class="group-label">Theme</div></div>
     <div class="ribbon-group"><div class="group-content stack">
       <input class="ribbon-input" id="headerText" aria-label="Header text" placeholder="Header, e.g. {title}" value="{title}">
       <input class="ribbon-input" id="footerText" aria-label="Footer text" placeholder="Footer" value="FoliMarkdown">
@@ -247,7 +258,7 @@
   <header class="chart-dialog-head"><div><h2 id="templateTitle">Choose a template</h2><p>Start with a ready-to-edit document. Your current document is saved separately.</p></div><button type="button" id="templateClose" class="icon-only" aria-label="Close templates">×</button></header>
   <div class="template-body">
     <nav id="templateList" class="template-list" aria-label="Document templates"></nav>
-    <section class="template-preview-panel" aria-labelledby="templatePreviewTitle"><h3 id="templatePreviewTitle"></h3><article id="templatePreview" class="document template-preview"></article></section>
+    <section class="template-preview-panel" aria-labelledby="templatePreviewTitle"><div class="template-mode-control"><span>Starting content</span><div role="group" aria-label="Choose template starting content"><button type="button" id="templateModePlain" aria-pressed="true">Standard</button><button type="button" id="templateModeBinding" aria-pressed="false">With {{...}}</button></div></div><p id="templateModeHint" class="template-mode-hint">Start with sample text. You can add bindings later.</p><h3 id="templatePreviewTitle"></h3><article id="templatePreview" class="document template-preview"></article></section>
   </div>
   <footer class="chart-dialog-footer"><p id="templateError" class="chart-error" role="alert"></p><button type="button" id="templateCancel" class="library-button">Cancel</button><button type="button" id="templateCreate" class="library-button primary">Create document</button></footer>
 </dialog>
@@ -273,6 +284,33 @@
       <div class="foli-function-actions"><button type="button" id="foliFunctionDelete" class="library-button" disabled>Delete</button><button type="submit" class="library-button primary">Save function</button></div>
     </form>
   </div>
+</dialog>
+<dialog id="pageBackgroundDialog" class="chart-dialog page-background-dialog" aria-labelledby="pageBackgroundTitle">
+  <form id="pageBackgroundForm">
+    <header class="chart-dialog-head"><div><h2 id="pageBackgroundTitle">Page background</h2><p>Choose a color and an optional image for every page.</p></div><button type="button" id="pageBackgroundClose" class="icon-only" aria-label="Close page background">×</button></header>
+    <div class="page-background-content">
+      <div class="page-background-fields">
+        <section class="page-background-section" aria-labelledby="pageBackgroundColorLabel">
+          <label id="pageBackgroundColorLabel" for="pageBackgroundColor">Page color</label>
+          <div class="page-background-color-row"><input id="pageBackgroundColor" type="color" value="#ffffff" aria-label="Choose page color"><input id="pageBackgroundHex" type="text" inputmode="text" maxlength="7" spellcheck="false" aria-label="Page color hex value" value="#FFFFFF"></div>
+          <div class="page-background-palette" aria-label="Suggested page colors"><button type="button" data-background-color="#ffffff" style="--swatch:#ffffff" aria-label="White"></button><button type="button" data-background-color="#f7f5ef" style="--swatch:#f7f5ef" aria-label="Warm ivory"></button><button type="button" data-background-color="#edf4f1" style="--swatch:#edf4f1" aria-label="Soft mint"></button><button type="button" data-background-color="#edf3fa" style="--swatch:#edf3fa" aria-label="Pale blue"></button><button type="button" data-background-color="#f8f0f1" style="--swatch:#f8f0f1" aria-label="Blush"></button></div>
+        </section>
+        <section class="page-background-section" aria-labelledby="pageBackgroundImageLabel">
+          <span id="pageBackgroundImageLabel" class="page-background-label">Background image</span>
+          <input id="pageBackgroundFile" class="page-background-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Choose a background image">
+          <button type="button" id="pageBackgroundDrop" class="page-background-drop" aria-describedby="pageBackgroundImageHelp"><span class="page-background-drop-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></span><span class="page-background-drop-copy"><strong id="pageBackgroundDropTitle">Choose an image</strong><small id="pageBackgroundDropDetail">or drag and drop it here</small></span></button>
+          <div class="page-background-image-meta"><span id="pageBackgroundImageName">No image selected</span><button type="button" id="pageBackgroundRemoveImage">Remove</button></div>
+          <p id="pageBackgroundImageHelp" class="chart-help">PNG, JPEG, or WebP · up to 4 MB · embedded in the document</p>
+        </section>
+        <section class="page-background-section page-background-image-options" id="pageBackgroundImageOptions" aria-label="Image appearance">
+          <label for="pageBackgroundSize">Image fit</label><select id="pageBackgroundSize"><option value="cover">Fill page</option><option value="contain">Fit entire image</option><option value="stretch">Stretch to page</option></select>
+          <label for="pageBackgroundOpacity">Image opacity <output id="pageBackgroundOpacityValue">25%</output></label><input id="pageBackgroundOpacity" type="range" min="0" max="100" value="25">
+        </section>
+      </div>
+      <div class="page-background-preview-wrap"><strong>Live preview</strong><div id="pageBackgroundSample" class="page-background-sample"><div id="pageBackgroundSampleImage"></div><span><small>DOCUMENT</small><b>Document title</b><i></i><i></i><i></i></span></div><small>Shown on every page</small></div>
+    </div>
+    <footer class="chart-dialog-footer"><p id="pageBackgroundError" class="chart-error" role="alert"></p><button type="button" id="pageBackgroundReset" class="library-button">Reset</button><button type="button" id="pageBackgroundCancel" class="library-button">Cancel</button><button type="submit" class="library-button primary">Apply background</button></footer>
+  </form>
 </dialog>
 <dialog id="chartDialog" class="chart-dialog" aria-labelledby="chartDialogTitle">
   <form id="chartForm">
@@ -367,6 +405,7 @@
 <script src="src/image-paths.js"></script>
 <script src="src/diagrams.js"></script>
 <script src="src/layout.js"></script>
+<script src="src/page-background.js"></script>
 <script src="src/search.js"></script>
 <script src="src/storage.js"></script>
 <script src="src/data.js"></script>
@@ -383,6 +422,7 @@
 <script src="src/desktop.js"></script>
 <script src="src/files.js"></script>
 <script src="src/library.js"></script>
+<script src="src/certificate-background.js"></script>
 <script src="src/templates.js"></script>
 <script src="src/pdf.js"></script>
 <script src="src/docx.js"></script>

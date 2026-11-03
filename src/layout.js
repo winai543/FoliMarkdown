@@ -33,6 +33,30 @@
     const portrait = layout.paperSize === "letter" ? [816, 1056] : [794, 1123];
     return layout.orientation === "landscape" ? portrait.reverse() : portrait;
   }
+  function readableDocumentColor(foreground, background) {
+    const rgb = value => value.slice(1).match(/.{2}/g).map(part => parseInt(part, 16));
+    const lightness = value => {
+      const [red, green, blue] = rgb(value).map(channel => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const backgroundLightness = lightness(background);
+    const contrast = value => {
+      const foregroundLightness = lightness(value);
+      return (Math.max(foregroundLightness, backgroundLightness) + 0.05) / (Math.min(foregroundLightness, backgroundLightness) + 0.05);
+    };
+    if (contrast(foreground) >= 4.5) return foreground;
+    const base = rgb(foreground);
+    const target = backgroundLightness > 0.18 ? 0 : 255;
+    for (let step = 1; step <= 20; step++) {
+      const ratio = step / 20;
+      const candidate = `#${base.map(channel => Math.round(channel * (1 - ratio) + target * ratio).toString(16).padStart(2, "0")).join("")}`;
+      if (contrast(candidate) >= 4.5) return candidate;
+    }
+    return target ? "#ffffff" : "#000000";
+  }
   function fontStylesheetUrl(font) {
     return GOOGLE_FONTS.has(font)
       ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, "+")}:wght@400;500;600;700&display=swap`
@@ -76,6 +100,42 @@
     pages.style.setProperty("--page-width", `${width}px`);
     pages.style.setProperty("--page-height", `${height}px`);
     pages.style.setProperty("--page-margin", `${({ normal: 76, narrow: 48, wide: 100 })[layout.margin] || 76}px`);
+    const documentColor = /^#[0-9a-f]{6}$/i.test(layout.documentColor || "") ? layout.documentColor : "#263144";
+    const accentColor = /^#[0-9a-f]{6}$/i.test(layout.accentColor || "") ? layout.accentColor : "#1b3557";
+    const color = /^#[0-9a-f]{6}$/i.test(layout.backgroundColor || "") ? layout.backgroundColor : "#ffffff";
+    const tint = (hex, whiteRatio) => {
+      const rgb = hex.slice(1).match(/.{2}/g).map(value => parseInt(value, 16));
+      return `#${rgb.map(value => Math.round(value * (1 - whiteRatio) + 255 * whiteRatio).toString(16).padStart(2, "0")).join("")}`;
+    };
+    const customTextColor = documentColor.toLowerCase() !== "#263144";
+    const bodyTextColor = readableDocumentColor(documentColor, color);
+    const headingTextColor = customTextColor ? bodyTextColor : readableDocumentColor("#1b3557", color);
+    const tableSoft = tint(accentColor, 0.91);
+    pages.style.setProperty("--document-text-color", bodyTextColor);
+    pages.style.setProperty("--document-table-text-color", readableDocumentColor(documentColor, "#ffffff"));
+    pages.style.setProperty("--document-table-heading-color", readableDocumentColor(customTextColor ? documentColor : "#234369", tableSoft));
+    pages.style.setProperty("--document-link-color", customTextColor ? bodyTextColor : readableDocumentColor("#155bb5", color));
+    pages.style.setProperty("--document-muted-text-color", customTextColor ? bodyTextColor : readableDocumentColor("#8a95a4", color));
+    pages.style.setProperty("--document-lead-color", customTextColor ? bodyTextColor : readableDocumentColor("#65748a", color));
+    pages.style.setProperty("--document-quote-color", customTextColor ? readableDocumentColor(documentColor, tableSoft) : "#56667c");
+    pages.style.setProperty("--document-code-color", customTextColor ? readableDocumentColor(documentColor, "#f1f3f7") : "#bd4361");
+    pages.style.setProperty("--document-accent-color", accentColor);
+    pages.style.setProperty("--document-accent-soft", tableSoft);
+    pages.style.setProperty("--document-accent-border", tint(accentColor, 0.78));
+    pages.style.setProperty("--document-accent-muted", tint(accentColor, 0.55));
+    pages.style.setProperty("--document-accent-wash", tint(accentColor, 0.97));
+    pages.style.setProperty("--document-heading-color", headingTextColor);
+    $("#accentColor").value = accentColor;
+    $("#accentColorSample").style.backgroundColor = accentColor;
+    $("#documentColor").value = documentColor;
+    $("#documentColorSample").style.backgroundColor = documentColor;
+    const image = /^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/]+={0,2}$/i.test(layout.backgroundImage || "") ? layout.backgroundImage : "";
+    const size = ["cover", "contain", "stretch"].includes(layout.backgroundSize) ? layout.backgroundSize : "cover";
+    const opacity = Number.isFinite(Number(layout.backgroundOpacity)) ? Math.max(0, Math.min(100, Number(layout.backgroundOpacity))) : 25;
+    pages.style.setProperty("--page-background-color", color);
+    pages.style.setProperty("--page-background-image", image ? `url("${image}")` : "none");
+    pages.style.setProperty("--page-background-size", size === "stretch" ? "100% 100%" : size);
+    pages.style.setProperty("--page-background-opacity", String(opacity / 100));
     const [printWidth, printHeight] = layout.paperSize === "letter" ? [8.5, 11] : [210, 297];
     const dimensions = layout.orientation === "landscape" ? [printHeight, printWidth] : [printWidth, printHeight];
     const unit = layout.paperSize === "letter" ? "in" : "mm";
@@ -87,9 +147,9 @@
   }
   function makePage(number) {
     const page = document.createElement("article");
-    page.className = "page";
+    page.className = layout.documentKind === "certificate" ? "page certificate-page" : "page";
     page.setAttribute("aria-label", `Page ${number}`);
-    page.innerHTML = '<div class="page-header" title="Double-click to edit header"></div><div class="page-body document"></div><div class="page-footer" title="Double-click to edit footer"><span></span><span></span></div>';
+    page.innerHTML = '<div class="page-background" aria-hidden="true"></div><div class="page-header" title="Double-click to edit header"></div><div class="page-body document"></div><div class="page-footer" title="Double-click to edit footer"><span></span><span></span></div>';
     pages.append(page);
     return page;
   }
@@ -180,7 +240,7 @@
         if (fitsWithin()) { moved = true; continue; }
         child.remove();
         const tail = child.classList.contains('markdown-row') ? splitColumnRow(child, target, fitsWithin)
-          : ['TABLE', 'UL', 'OL'].includes(child.tagName) ? splitRows(child, target, fitsWithin)
+          : child.classList.contains('markdown-align') || ['TABLE', 'UL', 'OL'].includes(child.tagName) ? splitRows(child, target, fitsWithin)
           : child.classList.contains('mermaid-figure') ? null : splitTextBlock(child, target, fitsWithin);
         if (tail) { moved = true; remainder.append(tail); }
         else remainder.append(child);
@@ -245,7 +305,7 @@
       body.append(block);
       if (block.classList.contains("markdown-absolute") || fits(body)) continue;
       block.remove();
-      const splittable = ["UL", "OL", "TABLE"].includes(block.tagName);
+      const splittable = block.classList.contains("markdown-align") || ["UL", "OL", "TABLE"].includes(block.tagName);
       const trySplit = () => block.classList.contains("markdown-row") ? splitColumnRow(block, body) : block.classList.contains("mermaid-figure") ? null : (splittable ? splitRows(block, body) : splitTextBlock(block, body));
       if ([...body.children].some(child => !child.classList.contains("markdown-absolute"))) {
         const remainder = trySplit();

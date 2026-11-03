@@ -25,6 +25,12 @@ Options:
       --paper <a4|letter>         Paper size
       --orientation <portrait|landscape>
       --margin <normal|narrow|wide>
+      --text-color <#RRGGBB>      Document text color
+      --accent-color <#RRGGBB>    Accent for table fills and rules
+      --background-color <#RRGGBB> Page background color
+      --background-image <file>    Local PNG, JPEG, or WebP background
+      --background-fit <cover|contain|stretch>
+      --background-opacity <0-100> Image opacity percentage
       --header <text>             Header; supports {title}, {page}, {pages}
       --footer <text>             Footer; supports the same placeholders
       --no-header                 Clear the header
@@ -60,13 +66,26 @@ Examples:
 function validateLayout(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("layout must be an object");
   const allowed = { paperSize: ["a4", "letter"], orientation: ["portrait", "landscape"],
-    margin: ["normal", "narrow", "wide"], font: fonts };
+    margin: ["normal", "narrow", "wide"], backgroundSize: ["cover", "contain", "stretch"],
+    documentKind: ["certificate"], font: fonts };
   const layout = {};
-  for (const [key, field] of Object.entries(value)) {
+  for (let [key, field] of Object.entries(value)) {
     if (allowed[key]) {
       if (!allowed[key].includes(field)) throw new Error(`Invalid ${key}: ${field}. Choose ${allowed[key].join(", ")}`);
     } else if (["header", "footer"].includes(key)) {
       if (typeof field !== "string" || field.length > 1000) throw new Error(`${key} must be text under 1000 characters`);
+    } else if (key === "backgroundColor") {
+      if (typeof field !== "string" || !/^#[0-9a-f]{6}$/i.test(field)) throw new Error("backgroundColor must be #RRGGBB");
+    } else if (key === "documentColor") {
+      if (typeof field !== "string" || !/^#[0-9a-f]{6}$/i.test(field)) throw new Error("documentColor must be #RRGGBB");
+    } else if (key === "accentColor") {
+      if (typeof field !== "string" || !/^#[0-9a-f]{6}$/i.test(field)) throw new Error("accentColor must be #RRGGBB");
+    } else if (key === "backgroundImage") {
+      if (typeof field !== "string" || field.length > 5_592_440 || (field && !/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/]+={0,2}$/i.test(field)))
+        throw new Error("backgroundImage must be an embedded PNG, JPEG, or WebP data URL under 4 MB");
+    } else if (key === "backgroundOpacity") {
+      field = Number(field);
+      if (!Number.isFinite(field) || field < 0 || field > 100) throw new Error("backgroundOpacity must be between 0 and 100");
     } else if (["pageNumbers", "firstPageBlank"].includes(key)) {
       if (typeof field !== "boolean") throw new Error(`${key} must be true or false`);
     } else throw new Error(`Unknown layout setting: ${key}`);
@@ -131,11 +150,13 @@ function parseArgs(args) {
       "-f": "format", "--format": "format", "-o": "output", "--output": "output",
       "--out-dir": "outDir", "--data": "data", "--title": "title", "--paper": "paperSize",
       "--orientation": "orientation", "--margin": "margin", "--header": "header",
-      "--footer": "footer", "--font": "font", "--chrome": "chrome", "--timeout": "timeout"
+      "--footer": "footer", "--font": "font", "--text-color": "documentColor", "--accent-color": "accentColor", "--background-color": "backgroundColor",
+      "--background-image": "backgroundImagePath", "--background-fit": "backgroundSize",
+      "--background-opacity": "backgroundOpacity", "--chrome": "chrome", "--timeout": "timeout"
     }[arg];
     if (key) {
       const value = take(i, arg); i++;
-      if (["paperSize", "orientation", "margin", "header", "footer", "font"].includes(key)) options.layout[key] = value;
+      if (["paperSize", "orientation", "margin", "header", "footer", "font", "documentColor", "accentColor", "backgroundColor", "backgroundSize", "backgroundOpacity"].includes(key)) options.layout[key] = value;
       else options[key] = value;
     } else if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
     else if (options.input) throw new Error("Provide exactly one input Markdown file");
@@ -277,6 +298,14 @@ async function convert(options) {
   const input = path.resolve(options.input);
   if (!/\.(md|markdown|txt|hbs)$/i.test(input)) throw new Error("Input must be a .md, .markdown, .txt, or .hbs file");
   let markdown = await fs.readFile(input, "utf8");
+  if (options.backgroundImagePath) {
+    const filename = path.resolve(options.backgroundImagePath);
+    const kind = mime[path.extname(filename).slice(1).toLowerCase()];
+    if (!["image/png", "image/jpeg", "image/webp"].includes(kind)) throw new Error("--background-image requires PNG, JPEG, or WebP");
+    const bytes = await fs.readFile(filename);
+    if (bytes.length > 4 * 1024 * 1024) throw new Error("Background image must be under 4 MB");
+    options.layout.backgroundImage = `data:${kind};base64,${bytes.toString("base64")}`;
+  }
   if (options.data) {
     let data;
     try { data = JSON.parse(await fs.readFile(path.resolve(options.data), "utf8")); }

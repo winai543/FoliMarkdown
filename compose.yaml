@@ -1,0 +1,20 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: folimarkdown-api:local
+    init: true
+    environment:
+      FOLIMARKDOWN_API_TOKEN: ${FOLIMARKDOWN_API_TOKEN:?Set FOLIMARKDOWN_API_TOKEN in .env}
+      PUPPETEER_NO_SANDBOX: "1"
+    ports:
+      - "127.0.0.1:${FOLIMARKDOWN_PORT:-3000}:3000"
+    shm_size: 512mb
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped

@@ -96,10 +96,12 @@ curl -sS http://127.0.0.1:3000/convert \
 
 The server listens on `127.0.0.1` by default, accepts requests up to 25 MB, and runs two conversions at a time. Use `--max-input-mb`, `--max-concurrent`, `--timeout`, and `--chrome` to adjust these limits. To listen on another interface, set `--host` and a Bearer token with `--token` or `FOLIMARKDOWN_API_TOKEN`; clients send `Authorization: Bearer <token>`. `--cors-origin https://example.com` permits requests from that browser origin.
 
+To run the API with Chromium in Docker, use the [Docker Compose example](docs/cli.md#ตัวอย่าง-docker-compose). Copy `.env.example` to `.env`, set a Bearer token, and run `docker compose up --build -d`.
+
 ## Features
 
 - Live GitHub Flavored Markdown preview: nested lists, tables, task lists, code, links, and images.
-- A4/Letter paper, portrait/landscape, margins, headers, footers, page numbers, page breaks, and document fonts.
+- A4/Letter paper, portrait/landscape, margins, headers, footers, page numbers, page breaks, document fonts, text color, coordinated accent colors, and page backgrounds.
 - Visual editors for Flowchart, Sequence, and ER diagrams: steps/shapes and connections, participants/messages, entities/fields/keys, and relationship cardinality. Includes live preview, form Undo/Redo, reordering, and editing existing diagram blocks.
 - Form-based settings for bar, line, pie charts, and timelines: edit titles, axis labels/limits, and data rows with a live preview. Click **Edit chart** on a preview, or place the cursor inside its Markdown block and choose **Chart → Edit chart**. Advanced Mermaid syntax remains editable in the source.
 - Mermaid charts and diagrams from fenced `mermaid`, `chart`, or `diagram` blocks. Mermaid is loaded on demand from a CDN and needs an internet connection; the rest of the editor works offline.
@@ -107,6 +109,10 @@ The server listens on `127.0.0.1` by default, accepts requests up to 25 MB, and 
 - Multiple documents in IndexedDB: create, rename, duplicate, move to Trash, restore, or permanently delete. Autosave and draft recovery are enabled. If IndexedDB is unavailable, the app falls back to `localStorage` with limited capacity.
 - Insert PNG, JPEG, GIF, WebP, and AVIF images by selecting a file, pasting, or dragging and dropping (up to 8 MB each, 16 MB per batch). The editor uses short `asset:` references and stores image data separately in the browser. SVG uploads are not supported.
 - Export Markdown (`.md`), standalone HTML, editable DOCX, and PDF; or use the browser's Print / Save as PDF dialog.
+
+### Page backgrounds
+
+Choose **Layout → Background** to set a page color or upload a PNG, JPEG, or WebP image (up to 4 MB). Set how the image fits the page and its opacity, then select **Apply background**. The preview updates on every page. **Reset** in the dialog restores a white page. Background settings are stored in the Markdown layout metadata and used by HTML, PDF, and DOCX exports. The CLI also accepts `--background-color`, `--background-image`, `--background-fit`, and `--background-opacity`; see the [CLI guide](docs/cli.md).
 
 ## Floating content
 
@@ -124,6 +130,24 @@ Content at a specific position.
 ```
 
 Positions refer to the nearest enclosing column, row, or floating block; at document level they refer to the current page's content area. Floating content does not reserve space, so leave room in the surrounding layout to avoid overlap. It stays on the page or container fragment where it appears rather than repeating on each page. HTML, PDF, and print preserve the positions; DOCX uses floating Word text boxes.
+
+## Text alignment
+
+Standard Markdown does not define paragraph alignment. FoliMarkdown supports `::: center`, `::: left`, and `::: right` blocks so alignment stays in the `.md` source. Close each block with `:::`. The block can contain headings, paragraphs, images, or other Markdown.
+
+To insert one, select the lines to align (or place the cursor on a line) and click **Home → Paragraph → Align left / center / right**. If the cursor is already inside an alignment block, clicking another alignment button changes that block's direction.
+
+```markdown
+::: center
+# Certificate of Achievement
+
+Presented to **Alex Morgan**
+:::
+
+This paragraph uses the normal document alignment.
+```
+
+Alignment is preserved in the preview, HTML, PDF, print, and DOCX exports. Other Markdown viewers may show the `:::` markers as text because this is a FoliMarkdown extension. The Student certificate template uses `::: center` for its heading and recipient.
 
 The **Resume** template includes an embedded placeholder photo in the top-right corner of its header. Replace the image Markdown inside its `absolute` block with your photo. The placeholder works offline and is included in Markdown exports.
 
@@ -178,11 +202,11 @@ File associations apply to installed desktop builds; the browser demo does not r
 
 ## Document templates
 
-Choose **File → Templates** or **Document Library → Templates**. Browse the preview, then click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
+Choose **File → Templates** or **Document Library → Templates**. Select **Standard** (the default) for sample text without `{{...}}`, or **With {{...}}** for a source with Handlebars fields. The preview shows the selected version. Click **Create document** to create a separate, editable document. Your current document is saved first. **Cancel** or **Escape** closes the picker without creating anything; **New** still creates a blank document.
 
-Built-in templates include **Resume**, **Invoice**, **Meeting agenda**, **Project proposal**, **Daily schedule**, **Lesson plan**, **Student certificate**, **Wedding invitation**, and **Travel itinerary**. Replace the sample text and bracketed placeholders with your details. Invoice amounts and proposal budgets are examples; update totals manually. Certificates use landscape paper; invitations and certificates omit running headers, footers, and page numbers.
+Built-in templates include **Resume**, **Invoice**, **Meeting agenda**, **Project proposal**, **Daily schedule**, **Lesson plan**, **Student certificate**, **Wedding invitation**, and **Travel itinerary**. Replace the sample text and bracketed placeholders with your details. Invoice amounts and proposal budgets are examples; update totals manually. The Student certificate includes an embedded decorative page background and uses landscape paper; invitations and certificates omit running headers, footers, and page numbers.
 
-Built-in templates keep Handlebars bindings such as `{{invoice.number}}` in the Markdown document. Open the **Data** tab and click **Bind data** to open the JSON modal. It generates a skeleton from nested fields and `{{#each}}` lists; enter values and click **Apply data** to update the preview while keeping the Markdown source unchanged. Click **Reset preview** to show the original template again. The CLI and API can bind JSON data to Markdown templates for automated reports; see the [CLI guide](docs/cli.md).
+The **With {{...}}** version includes Handlebars bindings such as `{{invoice.number}}`. Both versions remain regular Markdown: you can add bindings later to a Standard document. Open the **Data** tab and click **Bind data** to open the JSON modal. It generates a skeleton from nested fields and `{{#each}}` lists; enter values and click **Apply data** to update the preview while keeping the Markdown source unchanged. Click **Reset preview** to show the original template again. The CLI and API can bind JSON data to Markdown templates for automated reports; see the [CLI guide](docs/cli.md).
 
 Handlebars templates also support spreadsheet-style numeric formulas, for example `{{multiply quantity unitPrice}}` and `{{formatCurrency (add subtotal tax) "THB"}}`. See the [formula and formatting helper guide](docs/cli.md#จัดรูปแบบค่าด้วย-helpers).
 

@@ -15,14 +15,14 @@ function absolutePosition(value) {
   }
   return Object.keys(result).length === 2 ? result : null;
 }
-const CONTAINER_LINE = /^ {0,3}:::(?: (row|col)(?: \[([^\]\n]+)\])?| absolute \[([^\]\n]+)\])?[ \t]*$/;
+const CONTAINER_LINE = /^ {0,3}:::(?: (row|col|center|left|right)(?: \[([^\]\n]+)\])?| absolute \[([^\]\n]+)\])?[ \t]*$/;
 // Balance all container kinds together; fenced examples never close a container.
 function readMarkdownContainer(source) {
   const openingEnd = source.indexOf('\n');
   if (openingEnd < 0) return;
   const opening = CONTAINER_LINE.exec(source.slice(0, openingEnd));
   if (!opening || (!opening[1] && !opening[3]) || opening[1] === 'col' || opening[2]) return;
-  const type = opening[3] ? 'absolute' : 'row';
+  const type = opening[3] ? 'absolute' : opening[1];
   const position = type === 'absolute' ? absolutePosition(opening[3]) : null;
   if (type === 'absolute' && !position) return;
   const stack = [type], columns = [];
@@ -92,6 +92,21 @@ const ABSOLUTE_EXTENSION = {
     return `<div class="markdown-absolute" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}" style="${style}">${this.parser.parse(token.tokens)}</div>\n`;
   }
 };
+const ALIGN_EXTENSION = {
+  name: 'alignBlock', level: 'block', childTokens: ['tokens'],
+  start(source) { return source.search(/^ {0,3}::: (?:center|left|right)[ \t]*$/m); },
+  tokenizer(source) {
+    if (!/^ {0,3}::: (?:center|left|right)[ \t]*\n/.test(source)) return;
+    const container = readMarkdownContainer(source);
+    if (!container || !['center', 'left', 'right'].includes(container.type)) return;
+    return { type: 'alignBlock', raw: container.raw, align: container.type,
+      content: container.content, contentOffset: container.contentOffset,
+      tokens: this.lexer.blockTokens(container.content, []) };
+  },
+  renderer(token) {
+    return `<div class="markdown-align markdown-align-${token.align}" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">${this.parser.parse(token.tokens)}</div>\n`;
+  }
+};
 // Keep source offsets for editing tables/charts and navigating headings inside columns.
 function visitMarkdownSource(tokens, source, visit, base = 0) {
   let offset = 0;
@@ -103,6 +118,7 @@ function visitMarkdownSource(tokens, source, visit, base = 0) {
       visitMarkdownSource(column.tokens, column.raw, visit, base + start + column.contentOffset);
     }
     if (token.type === 'absoluteBlock') visitMarkdownSource(token.tokens, token.content, visit, base + start + token.contentOffset);
+    if (token.type === 'alignBlock') visitMarkdownSource(token.tokens, token.content, visit, base + start + token.contentOffset);
     offset = start + token.raw.length;
   }
 }

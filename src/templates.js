@@ -47,13 +47,18 @@ const DOCUMENT_TEMPLATES = [
     "id": "student-certificate",
     "name": "Student certificate",
     "description": "A landscape certificate with recipient, achievement, and signature fields.",
-    "text": "# Certificate of Achievement\n### [School / Institution]\n\nThis certificate is proudly presented to\n\n## [Student Name]\n\nFor dedication, effort, and successful completion of **[Course / Achievement]**.\n\n**Awarded on [Date]**\n\n::: row\n::: col\n**Teacher / Instructor**\n\n____________________\n\n[Name and title]\n:::\n\n::: col\n**Principal / Director**\n\n____________________\n\n[Name and title]\n:::\n:::\n\n**Certificate number:** [CERT-001]\n",
+    "text": "::: center\n### [School / Institution]\n# Certificate of Achievement\n\nThis certificate is proudly presented to\n\n## [Student Name]\n\nFor dedication, effort, and successful completion of **[Course / Achievement]**.\n\n**Awarded on [Date]**\n:::\n\n::: row\n::: col\n**Teacher / Instructor**\n\n____________________\n\n[Name and title]\n:::\n\n::: col\n**Principal / Director**\n\n____________________\n\n[Name and title]\n:::\n:::\n\n**Certificate number:** [CERT-001]\n",
     "layout": {
       "orientation": "landscape",
-      "margin": "narrow",
+      "margin": "normal",
       "header": "",
       "footer": "",
-      "pageNumbers": false
+      "pageNumbers": false,
+      "documentKind": "certificate",
+      "backgroundColor": "#fffdf8",
+      "backgroundImage": STUDENT_CERTIFICATE_BACKGROUND,
+      "backgroundSize": "stretch",
+      "backgroundOpacity": 100
     }
   },
   {
@@ -171,7 +176,8 @@ const TEMPLATE_TEXT_BINDINGS = {
 };
 
 for (const template of DOCUMENT_TEMPLATES) {
-  let source = template.text;
+  const plainText = template.text;
+  let source = plainText;
   for (const [before, after] of TEMPLATE_TEXT_BINDINGS[template.id] || []) source = source.replaceAll(before, after);
   const repeater = TEMPLATE_REPEATERS[template.id];
   if (repeater) source = source.replace(repeater.source, repeater.replacement);
@@ -183,11 +189,25 @@ for (const template of DOCUMENT_TEMPLATES) {
     const key = /^[a-z_]/.test(slug) ? slug : `value_${slug}`;
     return `{{fields.${key}}}`;
   });
+  template.plainText = plainText;
   template.source = source;
-  template.text = source;
+  template.text = plainText;
 }
 
 let selectedDocumentTemplate = null;
+let selectedTemplateMode = "plain";
+function templateText(template) {
+  return selectedTemplateMode === "binding" ? template.source : template.plainText;
+}
+function setTemplateMode(mode) {
+  selectedTemplateMode = mode === "binding" ? "binding" : "plain";
+  $("#templateModePlain").setAttribute("aria-pressed", String(selectedTemplateMode === "plain"));
+  $("#templateModeBinding").setAttribute("aria-pressed", String(selectedTemplateMode === "binding"));
+  $("#templateModeHint").textContent = selectedTemplateMode === "binding"
+    ? "Start with {{field}} bindings ready for JSON data."
+    : "Start with sample text. You can add bindings later.";
+  if (selectedDocumentTemplate) selectDocumentTemplate(selectedDocumentTemplate.id);
+}
 function selectDocumentTemplate(id) {
   const template = DOCUMENT_TEMPLATES.find(item => item.id === id);
   if (!template) return;
@@ -197,12 +217,22 @@ function selectDocumentTemplate(id) {
   }
   $('#templatePreviewTitle').textContent = template.name;
   const preview = document.createElement('div');
-  preview.innerHTML = renderMarkdown(template.text).html;
+  preview.innerHTML = renderMarkdown(templateText(template)).html;
   preview.querySelectorAll('.table-editor-caption').forEach(element => element.remove());
-  $('#templatePreview').replaceChildren(...preview.childNodes);
+  const target = $('#templatePreview');
+  target.replaceChildren(...preview.childNodes);
+  target.classList.toggle('certificate-preview', template.id === 'student-certificate');
+  target.style.backgroundColor = template.layout.backgroundColor || '#ffffff';
+  target.style.backgroundImage = template.layout.backgroundImage ? `url("${template.layout.backgroundImage}")` : 'none';
+  target.style.backgroundSize = template.layout.backgroundSize === 'stretch' ? '100% 100%' : template.layout.backgroundSize || 'cover';
+  target.style.backgroundPosition = 'center';
 }
 function openDocumentTemplates() {
   if (!ready || libraryBusy) return;
+  selectedTemplateMode = "plain";
+  $("#templateModePlain").setAttribute("aria-pressed", "true");
+  $("#templateModeBinding").setAttribute("aria-pressed", "false");
+  $("#templateModeHint").textContent = "Start with sample text. You can add bindings later.";
   selectDocumentTemplate(selectedDocumentTemplate?.id || DOCUMENT_TEMPLATES[0].id);
   $('#templateError').textContent = '';
   $('#templateDialog').showModal();
@@ -218,7 +248,7 @@ async function createDocumentFromTemplate() {
       return;
     }
     const template = selectedDocumentTemplate;
-    const record = newRecord(template.name, template.text, { ...DEFAULT_LAYOUT, ...template.layout });
+    const record = newRecord(template.name, templateText(template), { ...DEFAULT_LAYOUT, ...template.layout });
     await storeRecord(record);
     displayDocument(record);
     closeLibrary();
@@ -247,6 +277,8 @@ function initializeDocumentTemplates() {
     $('#templateList').append(button);
   }
   $('#libraryTemplates').addEventListener('click', openDocumentTemplates);
+  $('#templateModePlain').addEventListener('click', () => setTemplateMode('plain'));
+  $('#templateModeBinding').addEventListener('click', () => setTemplateMode('binding'));
   $('#templateClose').addEventListener('click', () => $('#templateDialog').close());
   $('#templateCancel').addEventListener('click', () => $('#templateDialog').close());
   $('#templateCreate').addEventListener('click', createDocumentFromTemplate);

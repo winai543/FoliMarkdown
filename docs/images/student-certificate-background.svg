@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="990" viewBox="0 0 1400 990">
+  <rect width="1400" height="990" fill="#fffdf8"/>
+  <rect x="22" y="22" width="1356" height="946" rx="12" fill="none" stroke="#bd9f65" stroke-width="4"/>
+  <rect x="34" y="34" width="1332" height="922" rx="6" fill="none" stroke="#274866" stroke-width="2"/>
+  <rect x="45" y="45" width="1310" height="900" rx="3" fill="none" stroke="#d8c494" stroke-width="1.5"/>
+  <g fill="none" stroke="#bd9f65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
+    <path d="M58 178V94q0-36 36-36h84 M75 165v-63q0-27 27-27h63"/>
+    <path d="M82 82l35 35 M94 68l51 51 M68 94l51 51" opacity=".55"/>
+    <path d="M58 812v84q0 36 36 36h84 M75 825v63q0 27 27 27h63"/>
+    <path d="M82 908l35-35 M94 922l51-51 M68 896l51-51" opacity=".55"/>
+    <path d="M1342 178V94q0-36-36-36h-84 M1325 165v-63q0-27-27-27h-63"/>
+    <path d="M1318 82l-35 35 M1306 68l-51 51 M1332 94l-51 51" opacity=".55"/>
+    <path d="M1342 812v84q0 36-36 36h-84 M1325 825v63q0 27-27 27h-63"/>
+    <path d="M1318 908l-35-35 M1306 922l-51-51 M1332 896l-51-51" opacity=".55"/>
+  </g>
+  <g fill="#bd9f65" opacity=".7">
+    <path d="M700 54l7 12 13 2-9 9 2 13-13-6-13 6 2-13-9-9 13-2z"/>
+    <circle cx="660" cy="73" r="2.5"/><circle cx="740" cy="73" r="2.5"/>
+    <circle cx="700" cy="936" r="4"/>
+  </g>
+  <path d="M612 936h70m36 0h70" fill="none" stroke="#bd9f65" stroke-width="1.5" opacity=".6"/>
+</svg>

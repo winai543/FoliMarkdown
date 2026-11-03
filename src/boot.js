@@ -4,6 +4,7 @@ initializeChartEditor();
 initializeDiagramEditor();
 initializeTableEditor();
 initializeLayoutEditor();
+initializePageBackground();
 initializeDocumentTemplates();
 initializeDataTab();
 const libraryStarted = startLibrary();

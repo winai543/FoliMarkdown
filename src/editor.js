@@ -102,3 +102,57 @@
     editor.focus();
     update(true);
   }
+  function alignmentAtSelection() {
+    const source = editor.value.replace(/\r\n?/g, "\n");
+    if (!source.includes(":::")) return null;
+    const start = editor.selectionStart, end = editor.selectionEnd;
+    let found = null;
+    visitMarkdownSource(markdownParser.lexer(source), source, (token, offset) => {
+      if (token.type !== "alignBlock") return;
+      const close = offset + token.raw.length;
+      if (start < offset || end > close || (start === close && start === end)) return;
+      if (!found || token.raw.length < found.length) {
+        found = { align: token.align, start: offset, openingEnd: source.indexOf("\n", offset), length: token.raw.length };
+      }
+    });
+    return found;
+  }
+  function syncAlignmentTools() {
+    const active = alignmentAtSelection()?.align;
+    document.querySelectorAll('[data-action^="align"]').forEach(button => {
+      const selected = button.dataset.action.slice(5).toLowerCase() === active;
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+  function alignSelection(align) {
+    if (currentView === "preview") setView("split");
+    const existing = alignmentAtSelection();
+    if (existing) {
+      editor.setRangeText(`::: ${align}`, existing.start, existing.openingEnd, "preserve");
+      editor.focus();
+      update(true);
+      syncAlignmentTools();
+      return;
+    }
+    const source = editor.value;
+    const start = editor.selectionStart, end = editor.selectionEnd;
+    const lineStart = source.lastIndexOf("\n", start - 1) + 1;
+    const last = end > start && source[end - 1] === "\n" ? end - 1 : end;
+    const nextBreak = source.indexOf("\n", last);
+    const lineEnd = nextBreak < 0 ? source.length : nextBreak;
+    const content = source.slice(lineStart, lineEnd);
+    if (!content.trim() || /^ {0,3}:::/.test(content)) {
+      insertBlock(`::: ${align}\nText\n:::`);
+      syncAlignmentTools();
+      return;
+    }
+    const prefix = lineStart > 0 && source[lineStart - 2] !== "\n" ? "\n" : "";
+    const suffix = lineEnd < source.length && source[lineEnd + 1] !== "\n" ? "\n" : "";
+    const opening = `::: ${align}\n`;
+    editor.setRangeText(`${prefix}${opening}${content}\n:::${suffix}`, lineStart, lineEnd, "preserve");
+    const contentStart = lineStart + prefix.length + opening.length;
+    editor.setSelectionRange(contentStart + start - lineStart, contentStart + (end > start ? Math.min(end, lineEnd) : start) - lineStart);
+    editor.focus();
+    update(true);
+    syncAlignmentTools();
+  }

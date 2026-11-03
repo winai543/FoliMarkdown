@@ -61,6 +61,12 @@ folimarkdown proposal.md --format pdf --force
 | `--page-numbers`, `--no-page-numbers` | เปิด/ปิดเลขหน้า |
 | `--first-page-blank`, `--no-first-page-blank` | ซ่อน/แสดง header และ footer ในหน้าแรก |
 | `--font NAME` | `system`, `Sarabun`, `Prompt`, `Kanit`, `Noto Sans Thai`, `Noto Serif Thai`, `IBM Plex Sans Thai` |
+| `--text-color #RRGGBB` | สีตัวอักษรหลักของเอกสาร |
+| `--accent-color #RRGGBB` | สีพื้นหัวตารางและเส้นตกแต่ง |
+| `--background-color #RRGGBB` | สีพื้นหลังของทุกหน้า |
+| `--background-image FILE` | ภาพพื้นหลัง PNG, JPEG หรือ WebP ขนาดไม่เกิน 4 MB |
+| `--background-fit cover\|contain\|stretch` | วิธีปรับภาพให้พอดีหน้า; ค่าเริ่มต้น `cover` |
+| `--background-opacity 0-100` | ความทึบของภาพเป็นเปอร์เซ็นต์; ค่าเริ่มต้น 25 |
 | `--chrome PATH` | ระบุไฟล์รัน Chrome/Chromium หากค้นหาอัตโนมัติไม่พบ |
 | `--timeout SECONDS` | เวลารอโหลดภาพ/แผนภูมิ 1–600 วินาที; ค่าเริ่มต้น 30 |
 | `--force` | เขียนทับไฟล์ผลลัพธ์เดิม |
@@ -76,9 +82,18 @@ folimarkdown proposal.md --format pdf --paper letter \
 folimarkdown invitation.md --format docx --title 'คำเชิญ' \
   --font 'Noto Serif Thai' --no-header --no-footer \
   --no-page-numbers --first-page-blank
+
+folimarkdown invitation.md --format pdf --background-color '#f6f1e8' \
+  --background-image images/paper.png --background-fit cover --background-opacity 18
+
+folimarkdown report.md --format docx --text-color '#34495e'
+
+folimarkdown report.md --format pdf --accent-color '#6a3fc8'
 ```
 
 ควรครอบข้อความที่มีช่องว่างหรือ `{...}` ด้วยเครื่องหมาย quote เพื่อให้ shell ส่งค่าไปครบ
+
+ในแอปตั้งค่าสีตัวอักษรจากปุ่ม **A** ในกลุ่ม Text สีนี้จะใช้กับเนื้อหา หัวข้อ ลิงก์ หัวตาราง และหัว/ท้ายกระดาษ โดยปรับความเข้มเพื่อให้อ่านได้บนพื้นหลังที่เลือก สีเน้นที่ **Layout → Theme** ใช้กับพื้นหัวตารางและเส้นตกแต่ง จากนั้นบันทึกเป็น `.md` ได้ ค่าจะอยู่ใน metadata ของไฟล์นั้น หากส่งผ่าน API ให้ใส่ `layout.documentColor` และ `layout.accentColor` เป็น `#RRGGBB`; สีและภาพพื้นหลังใช้ `layout.backgroundColor` เป็น `#RRGGBB`, `layout.backgroundImage` เป็น data URL ของ PNG/JPEG/WebP และเลือก `layout.backgroundSize` (`cover`, `contain`, `stretch`) กับ `layout.backgroundOpacity` (0–100) ตามต้องการ
 
 ## สร้างรายงานจาก Handlebars template
 
@@ -90,7 +105,7 @@ folimarkdown invoice.md \
   --format pdf --out-dir exports --title 'Invoice INV-2026-042'
 ```
 
-ในแอปให้เลือก **Create document** แล้วใช้ **Download Markdown** เพื่อบันทึก source ที่มี `{{...}}`; จากนั้นส่งไฟล์นั้นกับ JSON เข้า CLI หรือ API เมื่อพร้อมสร้างรายงานจริง
+ในแอปให้เลือก **With {{...}}** ในหน้าต่าง Templates ก่อนกด **Create document** แล้วใช้ **Download Markdown** เพื่อบันทึก source ที่มี `{{...}}`; จากนั้นส่งไฟล์นั้นกับ JSON เข้า CLI หรือ API เมื่อพร้อมสร้างรายงานจริง หากเลือก **Standard** จะได้เนื้อหาตัวอย่างธรรมดาเป็นค่าเริ่มต้น และยังสามารถเติม `{{...}}` เองภายหลังได้
 
 ดู data schema ตัวอย่างของ Invoice ได้ที่ [`examples/invoice-data.json`](../examples/invoice-data.json) ชื่อ field ใน JSON ต้องตรงกับ binding ใน Markdown เช่น `{{invoice.number}}` หรือรายการ `{{#each items}}...{{/each}}`
 
@@ -178,6 +193,32 @@ format helpers ได้แก่ `formatNumber`, `formatCurrency`, `formatDate`
 ดูรูปแบบคอลัมน์และตำแหน่งลอยเพิ่มเติมใน [README](../README.md#column-layouts) และ [Floating content](../README.md#floating-content)
 
 ## เปิด HTTP API
+
+### ตัวอย่าง Docker Compose
+
+ที่ root ของโปรเจกต์มี [`compose.yaml`](../compose.yaml), [`Dockerfile.api`](../Dockerfile.api) และ [JSON ตัวอย่าง](../examples/api-request.json) สำหรับรัน API พร้อม Chromium โดยไม่ต้องติดตั้ง Node.js หรือ browser บนเครื่องที่รัน Docker:
+
+```sh
+cp .env.example .env
+# แก้ FOLIMARKDOWN_API_TOKEN ใน .env ให้เป็นค่าสุ่มที่ยาวและเดายาก
+docker compose up --build -d
+docker compose ps
+curl -fS http://127.0.0.1:3000/health
+```
+
+เมื่อพร้อมใช้งาน `/health` จะตอบ `{"status":"ok"}` เรียกแปลงรายงานตัวอย่างโดยใช้ token เดียวกับใน `.env`:
+
+```sh
+curl -fS http://127.0.0.1:3000/convert \
+  -H 'Authorization: Bearer YOUR_TOKEN_FROM_DOT_ENV' \
+  -H 'Content-Type: application/json' \
+  --data-binary @examples/api-request.json \
+  -o monthly-report.pdf
+```
+
+เปลี่ยน `"format"` ใน JSON เป็น `"docx"` หรือ `"both"` แล้วเปลี่ยนชื่อไฟล์ปลายทางเป็น `.docx` หรือ `.zip` ตามลำดับ พอร์ตบนเครื่องตั้งด้วย `FOLIMARKDOWN_PORT` ใน `.env`; Compose เปิดให้เรียกจากเครื่องเดียวกันที่ `127.0.0.1` เท่านั้น หากโปรแกรมอื่นอยู่ใน Compose เดียวกันให้เรียก `http://api:3000/convert` และส่ง Bearer token เช่นกัน ปิดด้วย `docker compose down` API ไม่มีการเก็บไฟล์ผลลัพธ์ถาวรใน container; ผลลัพธ์ส่งกลับใน HTTP response
+
+Image ติดตั้ง Chromium กับฟอนต์ไทย ใช้ `--no-sandbox` สำหรับ Chromium ภายใน container และตรวจสุขภาพผ่าน `/health` ส่วน `.env` ถูกละจาก Git และ Docker build context
 
 ```sh
 npm run serve:cli -- --port 3000
