@@ -1,6 +1,20 @@
 "use strict";
 const TABLE_MAX_COLUMNS = 20;
 const TABLE_MAX_ROWS = 200;
+function tableColumnProfiles(token) {
+  const numericHeading = /\b(?:amount|balance|cost|discount|fee|price|quantity|qty|rate|revenue|subtotal|tax|total|units?)\b|(?:จำนวน|ราคา|ยอด|ภาษี|ส่วนลด)/i;
+  const numericValue = /^\(?[+-]?\s*[$€£¥฿]?\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*%?\)?$/;
+  return token.header.map((cell, index) => {
+    const heading = (cell.text || "").trim();
+    const values = token.rows.map(row => (row[index]?.text || "").trim()).filter(Boolean);
+    const inferredNumeric = numericHeading.test(heading) || (values.length > 0 && values.filter(value => numericValue.test(value)).length / values.length >= .75);
+    const numeric = inferredNumeric;
+    const longest = values.reduce((length, value) => Math.max(length, value.length), heading.length);
+    const weight = numeric ? (/\b(?:qty|quantity|units?)\b|จำนวน/i.test(heading) ? .9 : 1.45)
+      : Math.min(4.2, Math.max(2.1, 1.8 + Math.sqrt(longest) / 4));
+    return { numeric, weight };
+  });
+}
 function tableDefaults() {
   return { headers: ['Item', 'Description', 'Status'], align: [null, null, null],
     rows: [['First item', 'Add details', 'Draft'], ['Second item', 'Add details', 'Planned']] };

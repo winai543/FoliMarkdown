@@ -44,7 +44,24 @@
       const codeEdit = `<button type="button" class="library-button widget-code-edit" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">Edit code</button>`;
       const tableEdit = token._editableTable ? `<button type="button" class="library-button table-edit" data-table-index="${index}">Edit table</button>` : "";
       const caption = `<caption class="table-editor-caption"><span class="widget-toolbar">${tableEdit}${codeEdit}</span></caption>`;
-      return marked.Renderer.prototype.table.call(this, token).replace("<table>", `<table data-table-index="${index}" data-source-start="${token._sourceStart}" data-source-end="${token._sourceEnd}">${caption}`);
+      const fragment = document.createElement("template");
+      fragment.innerHTML = marked.Renderer.prototype.table.call(this, token);
+      const table = fragment.content.querySelector("table");
+      table.dataset.tableIndex = index;
+      table.dataset.sourceStart = token._sourceStart;
+      table.dataset.sourceEnd = token._sourceEnd;
+      table.insertAdjacentHTML("afterbegin", caption);
+      tableColumnProfiles(token).forEach((profile, column) => {
+        if (!profile.numeric) return;
+        for (const [rowIndex, row] of [...table.rows].entries()) {
+          const cell = row.cells[column];
+          if (!cell) continue;
+          const value = rowIndex ? (token.rows[rowIndex - 1]?.[column]?.text || "") : token.header[column].text;
+          if (!rowIndex || (value.length <= 28 && !value.includes("{{"))) cell.classList.add("table-numeric");
+          if (!token.align[column]) cell.setAttribute("align", "right");
+        }
+      });
+      return `${table.outerHTML}\n`;
     },
     heading(token) {
       const id = `heading-${markdownContext.headingIndex++}`;

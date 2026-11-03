@@ -203,6 +203,8 @@ Choose **Insert → Table** to open the visual table editor. Edit column heading
 
 The preview updates while you edit and shows the generated Markdown under **Markdown source**. Tables remain standard GFM Markdown and work with Markdown, HTML, DOCX, PDF, and print exports. Editing buttons also appear when focused with the keyboard, and stay visible on touch devices. They do not take up document space and are excluded from exports.
 
+Table rendering detects numeric columns from their headings and values, right aligns them, and keeps currency and quantity values on one line. Text columns take the remaining width and wrap at word boundaries. You can still set alignment explicitly in the table editor; DOCX exports allocate more width to longer text columns.
+
 ![Table dialog with editable headers and cells, column alignment, row and column controls, and live preview](docs/images/table-settings.png)
 
 ## Chart settings

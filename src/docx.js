@@ -284,14 +284,17 @@
             }
           } else if (token.type === "table") {
             const count = token.header.length;
-            const width = Math.floor(contentWidth / count);
+            const profiles = tableColumnProfiles(token);
+            const totalWeight = profiles.reduce((sum, column) => sum + column.weight, 0);
+            const widths = profiles.map(column => Math.floor(contentWidth * column.weight / totalWeight));
+            widths[count - 1] += contentWidth - widths.reduce((sum, width) => sum + width, 0);
             const row = async (cells, header) => `<w:tr>${(await Promise.all(cells.map(async (cell, i) => {
-              const align = token.align[i] === "right" ? "right" : token.align[i] === "center" ? "center" : "left";
-              return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${header ? '<w:shd w:fill="EAF1FA"/>' : ""}</w:tcPr>${paragraph(await inlineRuns(cell.tokens, header ? { bold: true } : {}), { align })}</w:tc>`;
+              const align = token.align[i] === "center" ? "center" : profiles[i].numeric ? "right" : token.align[i] === "right" ? "right" : "left";
+              return `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/>${header ? '<w:shd w:fill="EAF1FA"/>' : ""}</w:tcPr>${paragraph(await inlineRuns(cell.tokens, header ? { bold: true } : {}), { align })}</w:tc>`;
             }))).join("")}</w:tr>`;
             const rows = [await row(token.header, true)];
             for (const cells of token.rows) rows.push(await row(cells, false));
-            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="DAE1E9"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${Array.from({ length: count }, () => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
+            output += `<w:tbl><w:tblPr><w:tblW w:w="${contentWidth}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(side => `<w:${side} w:val="single" w:sz="4" w:color="DAE1E9"/>`).join("")}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
           }
         }
         return output;
